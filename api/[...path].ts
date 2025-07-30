@@ -1,20 +1,21 @@
 import 'dotenv/config';
-import express, { type Request, Response, NextFunction } from "express";
-import { registerRoutes } from "../server/routes";
-import path from 'path';
+import express from "express";
 
 const app = express();
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 
-// Serve uploads
-app.use('/uploads', express.static(path.join(__dirname, '../server/uploads')));
-
-// Register API routes
-registerRoutes(app);
+// Health check endpoint
+app.get("/api/health", (req, res) => {
+  res.json({ 
+    status: "ok", 
+    timestamp: new Date().toISOString(),
+    environment: process.env.NODE_ENV || "development"
+  });
+});
 
 // Simple fallback for all routes
-app.use("*", (req: Request, res: Response) => {
+app.use("*", (req, res) => {
   if (req.path.startsWith('/api')) {
     res.status(404).json({ error: 'API endpoint not found' });
   } else {
@@ -136,7 +137,7 @@ app.use("*", (req: Request, res: Response) => {
 });
 
 // Error handling middleware
-app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
+app.use((err: any, _req: any, res: any, _next: any) => {
   const status = err.status || err.statusCode || 500;
   const message = err.message || "Internal Server Error";
 
