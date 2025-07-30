@@ -48,7 +48,33 @@ registerRoutes(app);
 
 // Serve static files in production
 if (process.env.NODE_ENV === 'production') {
-  serveStatic(app);
+  try {
+    serveStatic(app);
+  } catch (error) {
+    console.log('Static files not found, serving API only');
+    // Fallback for API-only mode
+    app.use("*", (req, res) => {
+      if (req.path.startsWith('/api')) {
+        res.status(404).json({ error: 'API endpoint not found' });
+      } else {
+        res.status(200).send(`
+          <!DOCTYPE html>
+          <html>
+            <head>
+              <title>LaserTouch</title>
+              <meta charset="utf-8">
+              <meta name="viewport" content="width=device-width, initial-scale=1">
+            </head>
+            <body>
+              <h1>LaserTouch API Server</h1>
+              <p>This is the API server. The frontend is being built...</p>
+              <p>API endpoints are available at /api/*</p>
+            </body>
+          </html>
+        `);
+      }
+    });
+  }
 }
 
 // Error handling middleware
