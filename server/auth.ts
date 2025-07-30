@@ -11,7 +11,7 @@ import { User } from "@shared/schema";
 declare global {
   namespace Express {
     interface User {
-      id: string;
+      id: number;
       email: string;
       googleId?: string;
       isAdmin?: boolean;
