@@ -13,7 +13,7 @@ declare global {
     interface User {
       id: number;
       email: string;
-      googleId?: string;
+      googleId?: string | null;
       isAdmin?: boolean;
     }
   }
