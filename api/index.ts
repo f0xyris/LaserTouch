@@ -4,6 +4,7 @@ import { registerRoutes } from "../server/routes";
 import { serveStatic } from "../server/vite";
 import path from 'path';
 
+// Vercel API handler for production deployment
 const app = express();
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
