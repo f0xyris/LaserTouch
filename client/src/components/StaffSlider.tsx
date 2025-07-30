@@ -3,7 +3,7 @@ import { ChevronLeft, ChevronRight, Star } from "lucide-react";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { LazyImage } from "./LazyImage";
 import { useResizeOptimization } from "@/hooks/usePerformance";
-import kseniaPic from "@assets/image (6)_1752750136523.png";
+
 
 interface StaffMember {
   id: number;
@@ -85,7 +85,7 @@ export const StaffSlider = () => {
       name: t.kseniaNovak,
       position: t.massageTherapist,
       specialization: t.classicSpaSpec,
-      image: kseniaPic,
+      image: OPTIMIZED_STAFF_IMAGES.helena,
       experience: `6 ${t.experienceYears}`,
       rating: 4.8,
       achievements: [t.diplomaMassage, t.specialistYear]
