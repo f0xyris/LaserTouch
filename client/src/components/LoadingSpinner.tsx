@@ -1,0 +1,154 @@
+import { useLanguage } from "@/contexts/LanguageContext";
+
+interface LoadingSpinnerProps {
+  size?: "sm" | "md" | "lg";
+  text?: string;
+  fullScreen?: boolean;
+}
+
+export function LoadingSpinner({ size = "md", text, fullScreen = false }: LoadingSpinnerProps) {
+  const { t } = useLanguage();
+  
+  const sizeClasses = {
+    sm: "w-8 h-8",
+    md: "w-12 h-12",
+    lg: "w-16 h-16"
+  };
+  
+  const textSizeClasses = {
+    sm: "text-sm",
+    md: "text-base",
+    lg: "text-lg"
+  };
+
+  const spinner = (
+    <div className="flex flex-col items-center justify-center space-y-4">
+      {/* Elegant spinning flower/star animation */}
+      <div className={`${sizeClasses[size]} relative`}>
+        <div className="absolute inset-0 animate-spin">
+          <svg viewBox="0 0 50 50" className="w-full h-full">
+            <defs>
+              <linearGradient id="gradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                <stop offset="0%" stopColor="#5A7C54" />
+                <stop offset="50%" stopColor="#D4A574" />
+                <stop offset="100%" stopColor="#5A7C54" />
+              </linearGradient>
+            </defs>
+            {/* Elegant flower petals */}
+            <g fill="url(#gradient)">
+              <circle cx="25" cy="10" r="3" opacity="0.9" />
+              <circle cx="35" cy="15" r="3" opacity="0.8" />
+              <circle cx="40" cy="25" r="3" opacity="0.7" />
+              <circle cx="35" cy="35" r="3" opacity="0.6" />
+              <circle cx="25" cy="40" r="3" opacity="0.5" />
+              <circle cx="15" cy="35" r="3" opacity="0.4" />
+              <circle cx="10" cy="25" r="3" opacity="0.3" />
+              <circle cx="15" cy="15" r="3" opacity="0.2" />
+            </g>
+            {/* Center dot */}
+            <circle cx="25" cy="25" r="2" fill="#D4A574" />
+          </svg>
+        </div>
+        
+        {/* Pulsing ring */}
+        <div className="absolute inset-0 animate-pulse">
+          <div className="w-full h-full border-2 border-sage-200 rounded-full opacity-30"></div>
+        </div>
+      </div>
+      
+      {/* Loading text */}
+      <div className={`${textSizeClasses[size]} text-sage-700 font-medium animate-pulse`}>
+        {text || t.common?.loading || "Loading..."}
+      </div>
+      
+      {/* Animated dots */}
+      <div className="flex space-x-1">
+        <div className="w-2 h-2 bg-sage-400 rounded-full animate-bounce"></div>
+        <div className="w-2 h-2 bg-sage-400 rounded-full animate-bounce" style={{animationDelay: "0.1s"}}></div>
+        <div className="w-2 h-2 bg-sage-400 rounded-full animate-bounce" style={{animationDelay: "0.2s"}}></div>
+      </div>
+    </div>
+  );
+
+  if (fullScreen) {
+    return (
+      <div className="fixed inset-0 bg-cream-50/80 backdrop-blur-sm flex items-center justify-center z-50">
+        <div className="bg-white rounded-2xl shadow-xl p-8 mx-4 max-w-sm w-full">
+          {spinner}
+        </div>
+      </div>
+    );
+  }
+
+  return spinner;
+}
+
+// Page loading component with LaserTouch branding
+export function PageLoader() {
+  const { t } = useLanguage();
+  
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-cream-50 to-white flex items-center justify-center">
+      <div className="text-center space-y-8">
+        {/* Logo area */}
+        <div className="space-y-4">
+          <div className="text-4xl font-playfair font-bold text-sage-800">
+            LaserTouch
+          </div>
+          <div className="text-sage-600 text-lg font-inter">
+            {t.common?.beautyStudio || "Beauty Studio"}
+          </div>
+        </div>
+        
+        {/* Main spinner */}
+        <LoadingSpinner size="lg" text={t.common?.loading || "Loading..."} />
+        
+        {/* Decorative elements */}
+        <div className="flex justify-center space-x-4">
+          <div className="w-8 h-0.5 bg-gradient-to-r from-transparent via-sage-400 to-transparent"></div>
+          <div className="w-2 h-2 bg-gold-400 rounded-full animate-pulse"></div>
+          <div className="w-8 h-0.5 bg-gradient-to-r from-transparent via-sage-400 to-transparent"></div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// Button loading state
+export function ButtonLoader() {
+  return (
+    <div className="flex items-center space-x-2">
+      <div className="w-4 h-4 relative">
+        <div className="absolute inset-0 animate-spin">
+          <svg viewBox="0 0 20 20" className="w-full h-full">
+            <circle cx="10" cy="10" r="6" fill="none" stroke="currentColor" strokeWidth="2" strokeDasharray="37.7" strokeDashoffset="37.7" className="animate-spin" />
+          </svg>
+        </div>
+      </div>
+      <span>Processing...</span>
+    </div>
+  );
+}
+
+// Global transition loader
+export const TransitionLoader = ({ isVisible }: { isVisible: boolean }) => {
+  if (!isVisible) return null;
+
+  return (
+    <div className="fixed inset-0 bg-white/80 dark:bg-gray-900/80 backdrop-blur-sm z-50 flex items-center justify-center">
+      <div className="text-center">
+        <div className="relative">
+          <div className="w-16 h-16 border-4 border-sage-200 dark:border-sage-700 border-t-sage-600 dark:border-t-sage-400 rounded-full animate-spin"></div>
+          <div className="absolute inset-0 flex items-center justify-center">
+            <div className="w-6 h-6 bg-sage-600 dark:bg-sage-400 rounded-full animate-pulse"></div>
+          </div>
+        </div>
+        <p className="mt-4 text-sage-600 dark:text-sage-400 font-medium">
+          Переходим...
+        </p>
+      </div>
+    </div>
+  );
+};
+
+export default LoadingSpinner;

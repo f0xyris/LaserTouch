@@ -1,0 +1,716 @@
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500;600;700&family=Inter:wght@300;400;500;600;700&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --background: hsl(0, 0%, 100%);
+  --foreground: hsl(224, 71%, 4%);
+  --muted: hsl(220, 14%, 96%);
+  --muted-foreground: hsl(220, 9%, 46%);
+  --popover: hsl(0, 0%, 100%);
+  --popover-foreground: hsl(224, 71%, 4%);
+  --card: hsl(0, 0%, 100%);
+  --card-foreground: hsl(224, 71%, 4%);
+  --border: hsl(220, 13%, 91%);
+  --input: hsl(220, 13%, 91%);
+  --primary: hsl(280, 85%, 65%);
+  --primary-foreground: hsl(0, 0%, 100%);
+  --secondary: hsl(220, 14%, 96%);
+  --secondary-foreground: hsl(220, 9%, 46%);
+  --accent: hsl(220, 14%, 96%);
+  --accent-foreground: hsl(224, 71%, 4%);
+  --destructive: hsl(0, 84.2%, 60.2%);
+  --destructive-foreground: hsl(60, 9.1%, 97.8%);
+  --ring: hsl(280, 85%, 65%);
+  --radius: 0.75rem;
+  
+  /* Custom colors for LaserTouch - Mystical Theme */
+  --mystical-50: hsl(280, 30%, 95%);
+  --mystical-100: hsl(280, 25%, 88%);
+  --mystical-200: hsl(280, 20%, 75%);
+  --mystical-300: hsl(280, 25%, 60%);
+  --mystical-400: hsl(280, 50%, 50%);
+  --mystical-500: hsl(280, 85%, 65%);
+  --mystical-600: hsl(280, 90%, 55%);
+  --mystical-700: hsl(280, 95%, 45%);
+  --mystical-800: hsl(280, 100%, 35%);
+  --mystical-900: hsl(280, 100%, 25%);
+  
+  --deep-50: hsl(260, 20%, 95%);
+  --deep-100: hsl(260, 18%, 85%);
+  --deep-200: hsl(260, 16%, 75%);
+  --deep-300: hsl(260, 18%, 65%);
+  --deep-400: hsl(260, 20%, 55%);
+  --deep-500: hsl(260, 25%, 45%);
+  --deep-600: hsl(260, 30%, 35%);
+  --deep-700: hsl(260, 35%, 25%);
+  --deep-800: hsl(260, 40%, 15%);
+  --deep-900: hsl(260, 45%, 8%);
+  
+  --accent-50: hsl(320, 40%, 95%);
+  --accent-100: hsl(320, 35%, 85%);
+  --accent-200: hsl(320, 30%, 75%);
+  --accent-300: hsl(320, 35%, 65%);
+  --accent-400: hsl(320, 60%, 55%);
+  --accent-500: hsl(320, 70%, 65%);
+  --accent-600: hsl(320, 75%, 55%);
+  --accent-700: hsl(320, 80%, 45%);
+}
+
+.dark {
+  --background: hsl(260, 25%, 5%);
+  --foreground: hsl(220, 15%, 98%);
+  --muted: hsl(260, 20%, 8%);
+  --muted-foreground: hsl(220, 10%, 70%);
+  --popover: hsl(260, 30%, 6%);
+  --popover-foreground: hsl(220, 15%, 98%);
+  --card: hsl(260, 30%, 6%);
+  --card-foreground: hsl(220, 15%, 98%);
+  --border: hsl(260, 20%, 15%);
+  --input: hsl(260, 20%, 15%);
+  --primary: hsl(280, 90%, 70%);
+  --primary-foreground: hsl(0, 0%, 100%);
+  --secondary: hsl(260, 20%, 8%);
+  --secondary-foreground: hsl(220, 15%, 98%);
+  --accent: hsl(260, 20%, 8%);
+  --accent-foreground: hsl(220, 15%, 98%);
+  --destructive: hsl(0, 62.8%, 30.6%);
+  --destructive-foreground: hsl(0, 0%, 98%);
+  --ring: hsl(280, 90%, 70%);
+  --radius: 0.75rem;
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply font-inter antialiased bg-background text-foreground;
+  }
+  
+  /* Beautiful typography for headings */
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-playfair;
+  }
+  
+  /* Elegant styles for feminine appeal */
+  .heading-elegant {
+    @apply font-playfair font-semibold tracking-wide;
+  }
+  
+  .text-elegant {
+    @apply font-inter font-normal leading-relaxed;
+  }
+}
+
+@layer utilities {
+  /* Mystical Colors */
+  .text-mystical-50 { color: var(--mystical-50); }
+  .text-mystical-100 { color: var(--mystical-100); }
+  .text-mystical-200 { color: var(--mystical-200); }
+  .text-mystical-300 { color: var(--mystical-300); }
+  .text-mystical-400 { color: var(--mystical-400); }
+  .text-mystical-500 { color: var(--mystical-500); }
+  .text-mystical-600 { color: var(--mystical-600); }
+  .text-mystical-700 { color: var(--mystical-700); }
+  .text-mystical-800 { color: var(--mystical-800); }
+  .text-mystical-900 { color: var(--mystical-900); }
+  
+  .bg-mystical-50 { background-color: var(--mystical-50); }
+  .bg-mystical-100 { background-color: var(--mystical-100); }
+  .bg-mystical-200 { background-color: var(--mystical-200); }
+  .bg-mystical-300 { background-color: var(--mystical-300); }
+  .bg-mystical-400 { background-color: var(--mystical-400); }
+  .bg-mystical-500 { background-color: var(--mystical-500); }
+  .bg-mystical-600 { background-color: var(--mystical-600); }
+  .bg-mystical-700 { background-color: var(--mystical-700); }
+  .bg-mystical-800 { background-color: var(--mystical-800); }
+  .bg-mystical-900 { background-color: var(--mystical-900); }
+  
+  /* Deep Colors */
+  .text-deep-50 { color: var(--deep-50); }
+  .text-deep-100 { color: var(--deep-100); }
+  .text-deep-200 { color: var(--deep-200); }
+  .text-deep-300 { color: var(--deep-300); }
+  .text-deep-400 { color: var(--deep-400); }
+  .text-deep-500 { color: var(--deep-500); }
+  .text-deep-600 { color: var(--deep-600); }
+  .text-deep-700 { color: var(--deep-700); }
+  .text-deep-800 { color: var(--deep-800); }
+  .text-deep-900 { color: var(--deep-900); }
+  
+  .bg-deep-50 { background-color: var(--deep-50); }
+  .bg-deep-100 { background-color: var(--deep-100); }
+  .bg-deep-200 { background-color: var(--deep-200); }
+  .bg-deep-300 { background-color: var(--deep-300); }
+  .bg-deep-400 { background-color: var(--deep-400); }
+  .bg-deep-500 { background-color: var(--deep-500); }
+  .bg-deep-600 { background-color: var(--deep-600); }
+  .bg-deep-700 { background-color: var(--deep-700); }
+  .bg-deep-800 { background-color: var(--deep-800); }
+  .bg-deep-900 { background-color: var(--deep-900); }
+  
+  /* Accent Colors */
+  .text-accent-50 { color: var(--accent-50); }
+  .text-accent-100 { color: var(--accent-100); }
+  .text-accent-200 { color: var(--accent-200); }
+  .text-accent-300 { color: var(--accent-300); }
+  .text-accent-400 { color: var(--accent-400); }
+  .text-accent-500 { color: var(--accent-500); }
+  .text-accent-600 { color: var(--accent-600); }
+  .text-accent-700 { color: var(--accent-700); }
+  
+  .bg-accent-50 { background-color: var(--accent-50); }
+  .bg-accent-100 { background-color: var(--accent-100); }
+  .bg-accent-200 { background-color: var(--accent-200); }
+  .bg-accent-300 { background-color: var(--accent-300); }
+  .bg-accent-400 { background-color: var(--accent-400); }
+  .bg-accent-500 { background-color: var(--accent-500); }
+  .bg-accent-600 { background-color: var(--accent-600); }
+  .bg-accent-700 { background-color: var(--accent-700); }
+  
+  /* Hover effects */
+  .hover\:bg-mystical-100:hover { background-color: var(--mystical-100); }
+  .hover\:bg-mystical-600:hover { background-color: var(--mystical-600); }
+  .hover\:bg-mystical-700:hover { background-color: var(--mystical-700); }
+  .hover\:text-mystical-400:hover { color: var(--mystical-400); }
+  .hover\:text-mystical-500:hover { color: var(--mystical-500); }
+  .hover\:text-mystical-600:hover { color: var(--mystical-600); }
+  
+  .hover\:bg-deep-100:hover { background-color: var(--deep-100); }
+  .hover\:bg-deep-600:hover { background-color: var(--deep-600); }
+  .hover\:bg-deep-700:hover { background-color: var(--deep-700); }
+  .hover\:text-deep-400:hover { color: var(--deep-400); }
+  .hover\:text-deep-500:hover { color: var(--deep-500); }
+  .hover\:text-deep-600:hover { color: var(--deep-600); }
+  
+  .hover\:bg-accent-100:hover { background-color: var(--accent-100); }
+  .hover\:bg-accent-600:hover { background-color: var(--accent-600); }
+  .hover\:bg-accent-700:hover { background-color: var(--accent-700); }
+  .hover\:text-accent-400:hover { color: var(--accent-400); }
+  .hover\:text-accent-500:hover { color: var(--accent-500); }
+  .hover\:text-accent-600:hover { color: var(--accent-600); }
+  
+  /* Border colors */
+  .border-mystical-300 { border-color: var(--mystical-300); }
+  .border-mystical-400 { border-color: var(--mystical-400); }
+  .border-mystical-500 { border-color: var(--mystical-500); }
+  .border-mystical-600 { border-color: var(--mystical-600); }
+  
+  .border-deep-300 { border-color: var(--deep-300); }
+  .border-deep-400 { border-color: var(--deep-400); }
+  .border-deep-500 { border-color: var(--deep-500); }
+  .border-deep-600 { border-color: var(--deep-600); }
+  
+  .border-accent-300 { border-color: var(--accent-300); }
+  .border-accent-400 { border-color: var(--accent-400); }
+  .border-accent-500 { border-color: var(--accent-500); }
+  .border-accent-600 { border-color: var(--accent-600); }
+  
+  /* Special effects */
+  .gradient-mystical {
+    background: linear-gradient(135deg, var(--mystical-600) 0%, var(--mystical-800) 100%);
+  }
+  
+  .gradient-deep {
+    background: linear-gradient(135deg, var(--deep-600) 0%, var(--deep-800) 100%);
+  }
+  
+  .gradient-accent {
+    background: linear-gradient(135deg, var(--accent-500) 0%, var(--accent-700) 100%);
+  }
+  
+  .shadow-mystical {
+    box-shadow: 0 10px 25px -5px rgba(138, 43, 226, 0.25), 0 10px 10px -5px rgba(138, 43, 226, 0.04);
+  }
+  
+  .shadow-deep {
+    box-shadow: 0 10px 25px -5px rgba(75, 85, 123, 0.25), 0 10px 10px -5px rgba(75, 85, 123, 0.04);
+  }
+  
+  .glow-mystical {
+    box-shadow: 0 0 20px rgba(138, 43, 226, 0.5);
+  }
+  
+  .glow-accent {
+    box-shadow: 0 0 20px rgba(219, 39, 119, 0.5);
+  }
+  
+  /* Fix button text in light theme */
+  .bg-sage-600 {
+    background-color: var(--mystical-600) !important;
+    color: white !important;
+  }
+  
+  .bg-sage-600:hover {
+    background-color: var(--mystical-700) !important;
+    color: white !important;
+  }
+  
+  /* Ensure submit buttons have visible text in light theme */
+  button[type="submit"] {
+    color: white !important;
+  }
+  
+  /* Dark theme icons */
+  .dark svg {
+    color: white !important;
+  }
+  
+  /* Specific icon colors for better visibility */
+  .service-icon svg {
+    color: var(--mystical-600) !important;
+  }
+  
+  .dark .service-icon svg {
+    color: white !important;
+  }
+  
+  /* Card icons specifically white in dark theme */
+  .dark .bg-card svg {
+    color: white !important;
+  }
+  
+  /* Stats card icons */
+  .dark .rounded-lg svg {
+    color: white !important;
+  }
+  
+  /* Admin page specific icon styling - white icons in light theme */
+  .admin-page .bg-mystical-500 svg,
+  .admin-page .bg-accent-500 svg,
+  .admin-page .bg-green-500 svg,
+  .admin-page .bg-blue-500 svg {
+    color: white !important;
+  }
+  
+  /* Admin page quick actions - white icons */
+  .admin-page .bg-gradient-to-r svg {
+    color: white !important;
+  }
+  
+  /* Navigation improvements for dark theme */
+  .dark nav {
+    background-color: var(--deep-900);
+  }
+  
+  /* Tab improvements for better readability */
+  .dark .inline-flex {
+    background-color: var(--deep-800);
+    color: var(--mystical-300);
+  }
+  
+  .dark [data-state="active"] {
+    background-color: var(--deep-600) !important;
+    color: var(--mystical-200) !important;
+  }
+  
+  /* Scroll-based color changes for tabs */
+  .dark [role="tablist"] {
+    background-color: var(--deep-800);
+    border: 1px solid var(--deep-600);
+  }
+  
+  .dark [role="tab"] {
+    color: var(--mystical-300);
+    transition: all 0.3s ease;
+  }
+  
+  .dark [role="tab"]:hover {
+    color: var(--mystical-200);
+    background-color: var(--deep-700);
+  }
+  
+  .dark [role="tab"][data-state="active"] {
+    background-color: var(--deep-600);
+    color: var(--mystical-100);
+    border-color: var(--mystical-600);
+  }
+  
+  /* Mobile menu improvements */
+  .dark .md\:hidden button {
+    color: var(--mystical-300);
+  }
+  
+  .dark .md\:hidden button:hover {
+    color: var(--mystical-200);
+  }
+  
+  /* Improved contrast for links in dark theme */
+  .dark a {
+    color: var(--mystical-300);
+    transition: color 0.3s ease;
+  }
+  
+  .dark a:hover {
+    color: var(--mystical-200);
+  }
+  
+  /* Better readability for text in dark theme */
+  .dark {
+    --foreground: hsl(220, 25%, 90%);
+    --muted-foreground: hsl(220, 15%, 75%);
+  }
+  
+  /* Remove header border in dark theme */
+  .dark header {
+    border: none;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.3), 0 2px 4px -1px rgba(0, 0, 0, 0.1);
+  }
+  
+  /* Improve slider button visibility */
+  .dark .image-slider button {
+    backdrop-filter: blur(8px);
+  }
+  
+  /* Better button styles for dark theme */
+  .dark button {
+    background-color: var(--mystical-600);
+    color: var(--mystical-50);
+    border: 1px solid var(--mystical-500);
+  }
+  
+  .dark button:hover {
+    background-color: var(--mystical-500);
+    color: var(--mystical-100);
+  }
+  
+  /* Theme toggle button improvements */
+  .dark .theme-toggle {
+    background-color: var(--deep-700);
+    color: var(--mystical-300);
+    border: 1px solid var(--deep-600);
+  }
+  
+  .dark .theme-toggle:hover {
+    background-color: var(--deep-600);
+    color: var(--mystical-200);
+  }
+
+  /* Course card alignment */
+  .course-card {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+  }
+  
+  .course-card-content {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+  }
+  
+  .course-card-footer {
+    margin-top: auto;
+    padding-top: 1rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+  }
+  
+  .course-price {
+    font-size: 1.125rem;
+    font-weight: 600;
+    white-space: nowrap;
+  }
+  
+  .course-button {
+    flex-shrink: 0;
+  }
+  
+  /* Responsive adjustments */
+  @media (max-width: 640px) {
+    .course-card-footer {
+      flex-direction: column;
+      align-items: stretch;
+      gap: 0.75rem;
+    }
+    
+    .course-button {
+      width: 100%;
+    }
+  }
+  
+  /* Primary button improvements */
+  .dark .bg-primary {
+    background-color: var(--mystical-600) !important;
+    color: var(--mystical-50) !important;
+  }
+  
+  .dark .bg-primary:hover {
+    background-color: var(--mystical-500) !important;
+  }
+  
+  /* Secondary button improvements */
+  .dark .bg-secondary {
+    background-color: var(--deep-700) !important;
+    color: var(--mystical-200) !important;
+  }
+  
+  .dark .bg-secondary:hover {
+    background-color: var(--deep-600) !important;
+  }
+  
+  /* Ghost button improvements */
+  .dark .variant-ghost {
+    background-color: transparent;
+    color: var(--mystical-300);
+  }
+  
+  .dark .variant-ghost:hover {
+    background-color: var(--deep-700);
+    color: var(--mystical-200);
+  }
+  
+  /* Outline button improvements */
+  .dark .variant-outline {
+    background-color: transparent;
+    color: var(--mystical-300);
+    border: 1px solid var(--mystical-500);
+  }
+  
+  .dark .variant-outline:hover {
+    background-color: var(--mystical-600);
+    color: var(--mystical-50);
+  }
+  
+  /* Card and content improvements */
+  .dark .bg-card {
+    background-color: var(--deep-800) !important;
+    color: var(--mystical-200) !important;
+    border: 1.5px solid #6534f5 !important;
+  }
+  
+  /* Text improvements for better readability */
+  .dark h1, .dark h2, .dark h3, .dark h4, .dark h5, .dark h6 {
+    color: var(--mystical-200);
+  }
+  
+  .dark p, .dark span {
+    color: white
+  }
+  
+  /* Input improvements */
+  .dark input {
+    background-color: var(--deep-700);
+    color: var(--mystical-200);
+    border: 1px solid var(--deep-600);
+  }
+  
+  .dark input:focus {
+    border-color: var(--mystical-500);
+    box-shadow: 0 0 0 2px var(--mystical-500);
+  }
+  
+  .dark input::placeholder, .dark textarea::placeholder {
+    color: var(--mystical-400) !important;
+    opacity: 1;
+  }
+
+  input::placeholder, textarea::placeholder {
+    color: var(--muted-foreground);
+    opacity: 1;
+  }
+  
+  /* Remove TabsContent background */
+  .dark [role="tabpanel"] {
+    background-color: transparent !important;
+  }
+  
+  /* Make tab buttons full height without gaps */
+  [role="tab"] {
+    border: none !important;
+    margin-right: 4px;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    width: 100%;
+  }
+  
+  [role="tab"]:last-child {
+    margin-right: 0;
+  }
+  
+  /* Tab list spacing and full height */
+  [role="tablist"] {
+    gap: 4px;
+    padding: 0;
+    height: 40px;
+  }
+  
+  /* Restore original tab background colors */
+  .dark [role="tab"] {
+    background-color: transparent;
+  }
+  
+  .dark [role="tab"][data-state="active"] {
+    background-color: var(--mystical-600) !important;
+    color: white !important;
+  }
+  
+  /* Light theme tab colors */
+  [role="tab"][data-state="active"] {
+    background-color: var(--mystical-600) !important;
+    color: white !important;
+  }
+}
+
+.scrollbar-hide {
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none;  /* IE 10+ */
+}
+.scrollbar-hide::-webkit-scrollbar {
+  display: none; /* Chrome/Safari/Webkit */
+}
+
+/* === UI Improvements for Payment Form === */
+
+.dark label,
+.dark .Label,
+.dark .p-FieldLabel {
+  color: #fff !important;
+  font-size: 15px;
+  font-weight: 500;
+  letter-spacing: 0.01em;
+}
+
+input, select {
+  border-radius: 8px !important;
+  border: 1.5px solid #a78bfa !important;
+  padding: 12px !important;
+  font-size: 16px !important;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+input:focus, select:focus {
+  border-color: #c084fc !important;
+  outline: none !important;
+  box-shadow: 0 0 0 2px #c084fc44;
+}
+
+.dark input, .dark select {
+  background: #2d2240 !important;
+  color: #fff !important;
+  border: 1.5px solid #a78bfa !important;
+}
+
+.dark input:focus, .dark select:focus {
+  border-color: #c084fc !important;
+  box-shadow: 0 0 0 2px #c084fc44;
+}
+
+/* Button improvements */
+button[type="submit"] {
+  font-size: 17px !important;
+  font-weight: 700 !important;
+  border-radius: 8px !important;
+  box-shadow: 0 2px 8px 0 #0002;
+  transition: background 0.2s, box-shadow 0.2s;
+}
+button[type="submit"]:hover {
+  background: #a21caf !important;
+  box-shadow: 0 4px 16px 0 #0004;
+}
+
+/* Dropdown arrow for select */
+select {
+  appearance: none;
+  background-image: url('data:image/svg+xml;utf8,<svg fill="white" height="16" viewBox="0 0 20 20" width="16" xmlns="http://www.w3.org/2000/svg"><path d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"/></svg>');
+  background-repeat: no-repeat;
+  background-position: right 0.75rem center;
+  background-size: 1.2em;
+  padding-right: 2.5em !important;
+}
+
+/* Label spacing */
+label, .Label, .p-FieldLabel {
+  margin-bottom: 0.25em;
+  display: block;
+}
+
+/* Field spacing */
+input, select {
+  margin-bottom: 1.1em;
+}
+
+/* Stripe PaymentElement label fix */
+/*
+.de7zKgf4__p-Root {
+  color: #222 !important;
+  font-weight: 600;
+  font-size: 15px;
+  letter-spacing: 0.01em;
+}
+.dark .de7zKgf4__p-Root {
+  color: #fff !important;
+  font-weight: 600;
+  font-size: 15px;
+  letter-spacing: 0.01em;
+}
+*/
+
+.search-input {
+  padding-left: 60px !important; /* подберите значение при необходимости */
+}
+
+.search-input-light {
+  background: #fff !important;
+  color: #222 !important;
+  border: 1.5px solid #a78bfa !important;
+  padding: 12px 12px 12px 60px !important;
+  font-size: 16px !important;
+}
+
+[role="tablist"] [data-state="active"] svg {
+  color: #fff !important;
+}
+
+.search-input-light::placeholder {
+  color: #a78bfa !important;
+  opacity: 1;
+}
+
+.admin-tabs-nav [data-state="active"] svg {
+  color: #fff !important;
+}
+
+.review-name-input {
+    background: #fff !important;
+    color: #a78bfa !important;
+    border: 1.5px solid #a78bfa !important;
+}
+.review-name-input::placeholder {
+    color: #a78bfa !important;
+}
+
+input[type=number]::-webkit-inner-spin-button,
+input[type=number]::-webkit-outer-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+input[type=number] {
+  -moz-appearance: textfield;
+  appearance: textfield;
+}
+
+/* Стили для input и textarea: светлый фон в светлой теме, тёмный в тёмной */
+input, textarea {
+  background-color: #fff;
+  color: #222;
+}
+.dark input, .dark textarea {
+  background: #2d2240 !important;
+  color: #fff !important;
+  border: 1.5px solid #a78bfa !important;
+}
+
+.dark .dark\:hover\:bg-mystical-800:hover:is(.dark *) {
+    background-color: var(--mystical-800) !important;
+}
+
+.select-open:focus + .chevron {
+  transform: rotate(180deg) !important;
+}
