@@ -8,7 +8,7 @@
     "build": "vite build",
     "build:server": "esbuild server/index.ts --platform=node --packages=external --bundle --format=esm --outdir=dist",
     "start": "NODE_ENV=production node dist/index.js",
-    "vercel-build": "npm run build",
+    "vercel-build": "echo 'API-only project - no build needed'",
     "check": "tsc",
     "db:push": "drizzle-kit push"
   },
