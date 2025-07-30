@@ -68,7 +68,7 @@ export function setupAuth(app: Express) {
             return done(null, false, { message: "Invalid email or password" });
           }
 
-          return done(null, user);
+          return done(null, { ...user, isAdmin: user.isAdmin ?? false });
         } catch (error) {
           return done(error);
         }
@@ -121,7 +121,7 @@ export function setupAuth(app: Express) {
             }
 
             console.log("Google OAuth user created/found:", user);
-            return done(null, user);
+            return done(null, { ...user, isAdmin: user.isAdmin ?? false });
           } catch (error) {
             console.error("Google OAuth error:", error);
             return done(error);
@@ -135,7 +135,7 @@ export function setupAuth(app: Express) {
   passport.deserializeUser(async (id: number, done) => {
     try {
       const user = await storage.getUser(id);
-      done(null, user);
+      done(null, user ? { ...user, isAdmin: user.isAdmin ?? false } : user);
     } catch (error) {
       done(error);
     }
@@ -166,7 +166,7 @@ export function setupAuth(app: Express) {
         isAdmin: email === "antip4uck.ia@gmail.com", // Make this email admin by default
       });
 
-      req.login(user, (err) => {
+      req.login({ ...user, isAdmin: user.isAdmin ?? false }, (err) => {
         if (err) return next(err);
         res.status(201).json({ user: { ...user, password: undefined } });
       });

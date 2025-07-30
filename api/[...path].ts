@@ -14,7 +14,7 @@ app.use('/uploads', express.static(path.join(__dirname, '../server/uploads')));
 registerRoutes(app);
 
 // Simple fallback for all routes
-app.use("*", (req, res) => {
+app.use("*", (req: Request, res: Response) => {
   if (req.path.startsWith('/api')) {
     res.status(404).json({ error: 'API endpoint not found' });
   } else {
@@ -83,8 +83,8 @@ app.use("*", (req, res) => {
               text-decoration: none; 
               border-radius: 25px; 
               display: inline-block; 
-              margin-top: 20px;
-              font-weight: bold;
+              margin-top: 20px; 
+              font-weight: bold; 
               transition: transform 0.3s ease;
             }
             .api-link:hover {

@@ -10,7 +10,8 @@
     "start": "NODE_ENV=production node dist/index.js",
     "vercel-build": "npm run build",
     "check": "echo 'TypeScript check skipped for deployment'",
-    "db:push": "drizzle-kit push"
+    "db:push": "drizzle-kit push",
+    "type-check": "tsc --noEmit"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.10.0",

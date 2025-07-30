@@ -8,7 +8,7 @@ import Stripe from "stripe";
 import multer from "multer";
 import path from "path";
 import { fileURLToPath } from 'url';
-import fetch, { Response } from 'node-fetch';
+import fetch from 'node-fetch';
 import { sendAppointmentSubmittedEmail, sendAppointmentConfirmedEmail, sendCoursePurchasedEmail } from "./emailService";
 
 const __filename = fileURLToPath(import.meta.url);
@@ -33,7 +33,7 @@ const YANDEX_TRANSLATE_API_KEY = process.env.YANDEX_TRANSLATE_API_KEY || null;
 async function translateText(text: string, from: string, to: string): Promise<string> {
   if (!GOOGLE_TRANSLATE_API_KEY) return text;
   const url = `https://translation.googleapis.com/language/translate/v2?key=${GOOGLE_TRANSLATE_API_KEY}`;
-  const res: Response = await fetch(url, {
+  const res = await fetch(url, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ q: text, source: from, target: to, format: "text" })
@@ -45,7 +45,7 @@ async function translateText(text: string, from: string, to: string): Promise<st
 async function translateTextYandex(text: string, from: string, to: string): Promise<string> {
   if (!YANDEX_TRANSLATE_API_KEY) return text;
   const url = 'https://translate.api.cloud.yandex.net/translate/v2/translate';
-  const res: Response = await fetch(url, {
+  const res = await fetch(url, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',

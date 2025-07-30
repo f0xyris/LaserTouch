@@ -338,7 +338,6 @@ export interface Translations {
   noReviews: string;
   saving: string;
   added: string;
-  deleted: string;
   saveError: string;
   deleteError: string;
   addError: string;

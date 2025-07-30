@@ -27,7 +27,8 @@ import {
   Image as ImageIcon,
   Tag,
   ChevronDown,
-  Mail
+  Mail,
+  Loader2
 } from "lucide-react";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useAuth } from "@/hooks/useAuth";
@@ -1554,9 +1555,9 @@ function PricesEditor() {
   const [loading, setLoading] = useReactState(true);
   const [savingId, setSavingId] = useReactState<string | null>(null);
   const [addingService, setAddingService] = useReactState(false);
-  const [newService, setNewService] = useReactState({ name: {}, price: "", duration: "" });
+  const [newService, setNewService] = useReactState({ name: { ua: '', en: '', pl: '' }, price: "", duration: "" });
   const [addingCourse, setAddingCourse] = useReactState(false);
-  const [newCourse, setNewCourse] = useReactState({ name: {}, price: "", duration: "", description: {}, file: null, imageUrl: "" });
+  const [newCourse, setNewCourse] = useReactState({ name: { ua: '', en: '', pl: '' }, price: "", duration: "", description: { ua: '', en: '', pl: '' }, file: null as File | null, imageUrl: "" });
   const [imagePreview, setImagePreview] = useReactState("");
   const [openDeleteDialogId, setOpenDeleteDialogId] = useReactState(null);
   const [coursesOpen, setCoursesOpen] = useState(false);
@@ -1593,7 +1594,7 @@ function PricesEditor() {
   ) => {
     setSavingId(`${type}-${id}`);
     const url = type === "course" ? `/api/courses/${id}` : `/api/services/${id}`;
-    const body = { price: Number(price), duration: Number(duration) };
+    const body: any = { price: Number(price), duration: Number(duration) };
     if (name !== undefined) body.name = name;
     if (description !== undefined) body.description = description;
     const res = await fetch(url, {
@@ -1652,10 +1653,10 @@ function PricesEditor() {
     if (res.ok) {
       const created = await res.json();
       setServices(services => [...services, created]);
-      setNewService({ name: {}, price: "", duration: "" });
+      setNewService({ name: { ua: '', en: '', pl: '' }, price: "", duration: "" });
       setAddingService(false);
       toast({ title: t.success || t.added || "Success", description: t.added || "Added" });
-      queryClient.invalidateQueries(["/api/services"]);
+      queryClient.invalidateQueries({ queryKey: ["/api/services"] });
     } else {
       toast({ title: t.error || t.addError || "Error", description: t.addError || "Error adding", variant: "destructive" });
     }
@@ -1718,11 +1719,11 @@ function PricesEditor() {
     if (res.ok) {
       const created = await res.json();
       setCourses(courses => [...courses, created]);
-      setNewCourse({ name: {}, price: "", duration: "", description: {}, file: null, imageUrl: "" });
+      setNewCourse({ name: { ua: '', en: '', pl: '' }, price: "", duration: "", description: { ua: '', en: '', pl: '' }, file: null, imageUrl: "" });
       setImagePreview("");
       setAddingCourse(false);
       toast({ title: t.success || t.added || "Success", description: t.added || "Added" });
-      queryClient.invalidateQueries(["/api/courses"]);
+      queryClient.invalidateQueries({ queryKey: ["/api/courses"] });
     } else {
       toast({ title: t.error || t.addError || "Error", description: t.addError || "Error adding", variant: "destructive" });
     }
@@ -1802,7 +1803,7 @@ function PricesEditor() {
                     {!imagePreview && <ImageIcon className="w-8 h-8 text-muted-foreground hover:text-mystical-500 transition-colors" />}
                     </label>
                   <Button size="sm" className="h-10 w-full" onClick={handleAddCourse} disabled={savingId === "add-course"}>{savingId === "add-course" ? t.saving || "Saving..." : t.add || "Create"}</Button>
-                  <Button size="icon" variant="secondary" onClick={() => { setAddingCourse(false); setNewCourse({ name: {}, price: "0", duration: "0", description: {}, file: null, imageUrl: "" }); setImagePreview(""); }}>
+                  <Button size="icon" variant="secondary" onClick={() => { setAddingCourse(false); setNewCourse({ name: { ua: '', en: '', pl: '' }, price: "0", duration: "0", description: { ua: '', en: '', pl: '' }, file: null, imageUrl: "" }); setImagePreview(""); }}>
                     <Trash2 className="w-4 h-4" />
                   </Button>
                 </div>
@@ -1918,7 +1919,7 @@ function PricesEditor() {
                 </div>
                 <div className="flex flex-row gap-2 mt-4">
                   <Button size="sm" className="h-10 w-full" onClick={handleAddService} disabled={savingId === "add-service"}>{savingId === "add-service" ? t.saving || "Saving..." : t.add || "Create"}</Button>
-                  <Button size="icon" variant="secondary" onClick={() => { setAddingService(false); setNewService({ name: {}, price: "0", duration: "0" }); }}>
+                  <Button size="icon" variant="secondary" onClick={() => { setAddingService(false); setNewService({ name: { ua: '', en: '', pl: '' }, price: "0", duration: "0" }); }}>
                     <Trash2 className="w-4 h-4" />
                   </Button>
                 </div>
