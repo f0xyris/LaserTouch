@@ -16,6 +16,10 @@
       "dest": "/api/env-check.ts"
     },
     {
+      "src": "/api/test-login",
+      "dest": "/api/test-login.ts"
+    },
+    {
       "src": "/api/admin-check",
       "dest": "/api/admin-check.ts"
     },
