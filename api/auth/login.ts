@@ -5,6 +5,7 @@ import bcrypt from 'bcryptjs';
 import { generateToken } from '../utils/jwt';
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
+  // Enable CORS
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
@@ -19,12 +20,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
   try {
     console.log('🔐 Login attempt started');
-    console.log('📧 Request body:', { email: req.body?.email, hasPassword: !!req.body?.password });
-    console.log('🔧 Environment check:', {
-      hasDatabaseUrl: !!process.env.DATABASE_URL,
-      hasJwtSecret: !!process.env.JWT_SECRET,
-      nodeEnv: process.env.NODE_ENV
-    });
     
     const { email, password } = req.body;
     
@@ -33,6 +28,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       return res.status(400).json({ error: 'Email and password are required' });
     }
 
+    console.log('📧 Login attempt for:', email);
+    console.log('🔑 Password length:', password.length);
+
+    // Check environment variables
     if (!process.env.DATABASE_URL) {
       console.error('❌ DATABASE_URL not found');
       return res.status(500).json({ error: 'Database configuration missing' });
@@ -43,7 +42,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       return res.status(500).json({ error: 'JWT configuration missing' });
     }
 
-    console.log('🔍 Checking database connection...');
+    // Connect to database
     const pool = new Pool({
       connectionString: process.env.DATABASE_URL,
       ssl: { rejectUnauthorized: false }
@@ -53,7 +52,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     console.log('✅ Database connected successfully');
     
     try {
-      console.log('🔍 Searching for user:', email);
+      // Get user from database
       const userResult = await client.query(
         'SELECT id, email, password, first_name, last_name, profile_image_url, google_id, phone, is_admin FROM users WHERE email = $1',
         [email]
@@ -68,9 +67,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       console.log('✅ User found:', { 
         id: user.id, 
         email: user.email, 
-        hasPassword: !!user.password, 
-        passwordLength: user.password ? user.password.length : 0,
-        passwordStart: user.password ? user.password.substring(0, 10) + '...' : 'null'
+        hasPassword: !!user.password,
+        firstName: user.first_name,
+        lastName: user.last_name,
+        isAdmin: user.is_admin
       });
       
       if (!user.password) {
@@ -78,12 +78,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         return res.status(401).json({ error: 'Invalid email or password' });
       }
       
-      console.log('🔑 Verifying password...');
-      console.log('📝 Input password length:', password.length);
-      console.log('🗄️ Stored password hash length:', user.password.length);
-      
+      // Verify password
       const isValidPassword = await bcrypt.compare(password, user.password);
-      console.log('🔍 Password comparison result:', isValidPassword);
+      console.log('🔍 Password verification result:', isValidPassword);
       
       if (!isValidPassword) {
         console.log('❌ Invalid password for user:', email);
@@ -101,8 +98,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         isAdmin: user.is_admin
       });
       
-      console.log('🎫 JWT token generated');
+      console.log('🎫 JWT token generated successfully');
       
+      // Return user data (without password)
       const { password: _, ...userWithoutPassword } = user;
       
       // Set token in cookie
