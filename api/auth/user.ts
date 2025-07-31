@@ -8,12 +8,18 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   }
 
   try {
+    console.log('👤 User info request received');
+    
     // Check if user is authenticated via session
     const session = (req as any).session;
+    console.log('🔍 Session data:', session);
     
     if (!session || !session.userId) {
+      console.log('❌ No session or userId found');
       return res.status(401).json({ message: 'Not authenticated' });
     }
+
+    console.log('🔍 Looking for user with ID:', session.userId);
 
     // Get user data from database
     const pool = new Pool({
@@ -30,12 +36,20 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       );
 
       if (userResult.rows.length === 0) {
+        console.log('❌ User not found in database');
         return res.status(401).json({ message: 'User not found' });
       }
 
       const user = userResult.rows[0];
+      console.log('✅ User found:', {
+        id: user.id,
+        email: user.email,
+        firstName: user.first_name,
+        lastName: user.last_name,
+        isAdmin: user.is_admin
+      });
       
-      res.status(200).json({
+      const responseData = {
         id: user.id,
         email: user.email,
         firstName: user.first_name,
@@ -44,7 +58,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         googleId: user.google_id,
         phone: user.phone,
         isAdmin: user.is_admin
-      });
+      };
+      
+      console.log('📤 Sending user data:', responseData);
+      res.status(200).json(responseData);
 
     } finally {
       client.release();
@@ -52,7 +69,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     }
 
   } catch (error) {
-    console.error('User info error:', error);
+    console.error('❌ User info error:', error);
     res.status(500).json({ error: 'Internal server error' });
   }
 } 

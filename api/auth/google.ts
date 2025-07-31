@@ -24,16 +24,19 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       return res.status(500).json({ error: 'Google OAuth not configured' });
     }
     
-    // For now, redirect to Google OAuth URL
+    // Use the exact URL that should be configured in Google Console
+    const redirectUri = 'https://laser-touch.vercel.app/api/auth/google/callback';
+    
     const googleAuthUrl = `https://accounts.google.com/o/oauth2/v2/auth?` +
       `client_id=${process.env.GOOGLE_CLIENT_ID}&` +
-      `redirect_uri=${encodeURIComponent(`${process.env.BASE_URL || 'https://laser-touch.vercel.app'}/api/auth/google/callback`)}&` +
+      `redirect_uri=${encodeURIComponent(redirectUri)}&` +
       `response_type=code&` +
       `scope=openid%20email%20profile&` +
       `access_type=offline&` +
       `prompt=consent`;
     
     console.log('🔗 Redirecting to Google OAuth:', googleAuthUrl);
+    console.log('📍 Redirect URI:', redirectUri);
     res.redirect(googleAuthUrl);
     
   } catch (error) {

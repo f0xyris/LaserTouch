@@ -20,6 +20,10 @@
       "dest": "/api/test-db.ts"
     },
     {
+      "src": "/api/check-admin",
+      "dest": "/api/check-admin.ts"
+    },
+    {
       "src": "/api/courses",
       "dest": "/api/courses.ts"
     },
@@ -38,6 +42,10 @@
     {
       "src": "/api/auth/google",
       "dest": "/api/auth/google.ts"
+    },
+    {
+      "src": "/api/auth/google/callback",
+      "dest": "/api/auth/google/callback.ts"
     },
     {
       "src": "/api/(.*)",
