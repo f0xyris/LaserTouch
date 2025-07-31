@@ -85,6 +85,19 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
       console.log('✅ Login successful for user:', email);
       
+      // Set session
+      const session = (req as any).session;
+      if (session) {
+        session.userId = user.id;
+        session.user = {
+          id: user.id,
+          email: user.email,
+          firstName: user.first_name,
+          lastName: user.last_name,
+          isAdmin: user.is_admin
+        };
+      }
+      
       // Return user data (without password)
       const { password: _, ...userWithoutPassword } = user;
       
