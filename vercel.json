@@ -5,8 +5,7 @@
       "src": "package.json",
       "use": "@vercel/static-build",
       "config": {
-        "distDir": "dist",
-        "buildCommand": "npm run vercel-build"
+        "distDir": "dist"
       }
     },
     {
@@ -31,11 +30,5 @@
     "api/[...path].ts": {
       "maxDuration": 30
     }
-  },
-  "build": {
-    "env": {
-      "NODE_ENV": "production"
-    }
-  },
-  "ignoreCommand": "echo 'Skipping all checks for Vercel deployment'"
+  }
 } 
