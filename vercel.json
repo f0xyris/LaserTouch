@@ -12,16 +12,8 @@
   ],
   "routes": [
     {
-      "src": "/api/test",
-      "dest": "/api/test.ts"
-    },
-    {
-      "src": "/api/test-db",
-      "dest": "/api/test-db.ts"
-    },
-    {
-      "src": "/api/check-admin",
-      "dest": "/api/check-admin.ts"
+      "src": "/api/admin-check",
+      "dest": "/api/admin-check.ts"
     },
     {
       "src": "/api/courses",
