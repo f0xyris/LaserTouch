@@ -36,13 +36,13 @@ export default function Login() {
   const loginForm = useForm({
     resolver: zodResolver(createLoginSchema(t)),
     defaultValues: { email: "", password: "" },
-    mode: "onChange"
+    mode: "onSubmit"
   });
   
   const registerForm = useForm({
     resolver: zodResolver(createRegisterSchema(t)),
     defaultValues: { email: "", password: "", firstName: "", lastName: "", phone: "" },
-    mode: "onChange"
+    mode: "onSubmit"
   });
 
   // Check for OAuth error in URL
@@ -65,12 +65,14 @@ export default function Login() {
 
   const handleLogin = async (data: any) => {
     try {
+      console.log('Attempting login with:', { email: data.email, password: data.password ? '[HIDDEN]' : 'undefined' });
       await loginMutation.mutateAsync(data);
       toast({
         title: t.auth?.loginWelcomeTitle || "Welcome back!",
         description: t.auth?.loginWelcomeCreative || "You look amazing today! Glad to see you again!",
       });
     } catch (error) {
+      console.error('Login error:', error);
       toast({
         title: t.auth?.login || "Login failed",
         description: "Invalid email or password",
