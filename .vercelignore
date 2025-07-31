@@ -2,10 +2,4 @@ node_modules
 .git
 .env
 .env.local
-*.log
-tsconfig.json
-tsconfig.vercel.json
-*.tsbuildinfo
-vercel-build.js
-BUILD_FIXES_SUMMARY.md
-VERCEL_SETUP.md 
+*.log 
