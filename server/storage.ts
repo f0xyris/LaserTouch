@@ -14,9 +14,10 @@ import {
   type InsertAppointment,
   type InsertReview,
 } from "../shared/schema";
-import { db } from "./db";
+import { db, pool } from "./db";
 import { eq, desc, and, or, gte, lt, ne, sql } from "drizzle-orm";
 import session from "express-session";
+import pgSimple from "connect-pg-simple";
 
 // Interface for storage operations
 export interface IStorage {
@@ -66,8 +67,17 @@ export class DatabaseStorage implements IStorage {
   sessionStore: any;
 
   constructor() {
-    // Используем простой MemoryStore для сессий, чтобы избежать проблем с PostgreSQL
-    this.sessionStore = new session.MemoryStore();
+    // В продакшене используем PostgreSQL, в разработке - MemoryStore
+    if (process.env.NODE_ENV === "production") {
+      const PostgresStore = pgSimple(session);
+      this.sessionStore = new PostgresStore({
+        pool,
+        tableName: 'sessions',
+        createTableIfMissing: true,
+      });
+    } else {
+      this.sessionStore = new session.MemoryStore();
+    }
   }
 
   // User operations

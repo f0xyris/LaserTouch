@@ -3,10 +3,12 @@ import { Strategy as LocalStrategy } from "passport-local";
 import { Strategy as GoogleStrategy } from "passport-google-oauth20";
 import { Express } from "express";
 import session from "express-session";
+import pgSimple from "connect-pg-simple";
 import { scrypt, randomBytes, timingSafeEqual } from "crypto";
 import { promisify } from "util";
 import { storage } from "./storage";
 import { User } from "../shared/schema";
+import { pool } from "./db";
 
 declare global {
   namespace Express {
@@ -35,15 +37,25 @@ async function comparePasswords(supplied: string, stored: string) {
 }
 
 export function setupAuth(app: Express) {
+  // Используем PostgreSQL для хранения сессий в продакшене
+  const PostgresStore = pgSimple(session);
+  
   const sessionSettings: session.SessionOptions = {
     secret: process.env.SESSION_SECRET || "your-secret-key-here",
     resave: false,
     saveUninitialized: false,
-    store: new session.MemoryStore(),
+    store: process.env.NODE_ENV === "production" 
+      ? new PostgresStore({
+          pool,
+          tableName: 'sessions',
+          createTableIfMissing: true,
+        })
+      : new session.MemoryStore(),
     cookie: {
       secure: process.env.NODE_ENV === "production",
       httpOnly: true,
       maxAge: 24 * 60 * 60 * 1000, // 24 hours
+      sameSite: process.env.NODE_ENV === "production" ? 'none' : 'lax',
     },
   };
 
