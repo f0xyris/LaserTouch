@@ -16,7 +16,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   }
 
   try {
-    console.log('🔐 Login attempt started');
+    console.log('🔐 Login attempt started - v2');
     
     const { email, password } = req.body;
     
@@ -42,7 +42,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     // For now, just return success with environment info
     res.status(200).json({ 
       success: true,
-      message: 'Environment check passed',
+      message: 'Environment check passed - v2',
       method: req.method,
       hasBody: !!req.body,
       bodyKeys: req.body ? Object.keys(req.body) : [],
