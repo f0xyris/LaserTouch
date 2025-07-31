@@ -1,5 +1,8 @@
 import 'dotenv/config';
 import type { VercelRequest, VercelResponse } from '@vercel/node';
+import { Pool } from 'pg';
+import bcrypt from 'bcryptjs';
+import { generateToken } from './utils/jwt';
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   // Enable CORS
@@ -16,7 +19,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   }
 
   try {
-    console.log('🔐 Login attempt started - DEBUG VERSION');
+    console.log('🔐 Login attempt started');
     
     const { email, password } = req.body;
     
@@ -25,8 +28,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     }
 
     console.log('📧 Login attempt for:', email);
-    console.log('🔑 Password provided:', password ? 'YES' : 'NO');
-
+    
     // Check environment variables
     if (!process.env.DATABASE_URL) {
       console.error('❌ DATABASE_URL not found');
@@ -39,25 +41,64 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     }
 
     console.log('✅ Environment variables check passed');
-    console.log('🔗 DATABASE_URL length:', process.env.DATABASE_URL?.length || 0);
-    console.log('🔐 JWT_SECRET length:', process.env.JWT_SECRET?.length || 0);
     
-    // For now, return a simple response to test if the endpoint works
-    console.log('🔧 Returning test response for debugging');
-    
-    const testResponse = {
-      token: 'test-token-' + Date.now(),
-      user: {
-        id: 1,
-        email: email,
-        firstName: 'Yaroslav',
-        lastName: 'Antypchuk',
-        isAdmin: true
-      }
-    };
+    // Connect to database
+    const pool = new Pool({
+      connectionString: process.env.DATABASE_URL,
+      ssl: { rejectUnauthorized: false }
+    });
 
-    console.log('📤 Sending test response:', testResponse);
-    res.status(200).json(testResponse);
+    const client = await pool.connect();
+    
+    try {
+      console.log('🔍 Searching for user with email:', email);
+      
+      // Find user by email
+      const userResult = await client.query(
+        'SELECT id, email, first_name, last_name, password, is_admin FROM users WHERE email = $1',
+        [email]
+      );
+
+      if (userResult.rows.length === 0) {
+        console.log('❌ User not found');
+        return res.status(401).json({ error: 'Invalid email or password' });
+      }
+
+      const user = userResult.rows[0];
+      console.log('✅ User found:', { id: user.id, email: user.email, firstName: user.first_name, lastName: user.last_name });
+
+      // Verify password
+      const isValidPassword = await bcrypt.compare(password, user.password);
+      
+      if (!isValidPassword) {
+        console.log('❌ Invalid password');
+        return res.status(401).json({ error: 'Invalid email or password' });
+      }
+
+      console.log('✅ Password verified successfully');
+
+      // Generate JWT token
+      const token = generateToken(user.id);
+      console.log('🔐 JWT token generated');
+
+      const responseData = {
+        token,
+        user: {
+          id: user.id,
+          email: user.email,
+          firstName: user.first_name,
+          lastName: user.last_name,
+          isAdmin: user.is_admin
+        }
+      };
+
+      console.log('📤 Login successful, sending response');
+      res.status(200).json(responseData);
+
+    } finally {
+      client.release();
+      await pool.end();
+    }
     
   } catch (error) {
     console.error('❌ Login error:', error);
