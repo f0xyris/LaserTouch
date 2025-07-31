@@ -56,7 +56,13 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       }
 
       const user = userResult.rows[0];
-      console.log('✅ User found:', { id: user.id, email: user.email, hasPassword: !!user.password });
+      console.log('✅ User found:', { 
+        id: user.id, 
+        email: user.email, 
+        hasPassword: !!user.password,
+        passwordLength: user.password ? user.password.length : 0,
+        passwordStart: user.password ? user.password.substring(0, 10) + '...' : 'null'
+      });
 
       // Check if user has password
       if (!user.password) {
@@ -66,7 +72,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
       // Verify password
       console.log('🔑 Verifying password...');
+      console.log('📝 Input password length:', password.length);
+      console.log('🗄️ Stored password hash length:', user.password.length);
+      
       const isValidPassword = await bcrypt.compare(password, user.password);
+      console.log('🔍 Password comparison result:', isValidPassword);
       
       if (!isValidPassword) {
         console.log('❌ Invalid password for user:', email);
