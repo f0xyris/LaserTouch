@@ -1,6 +1,7 @@
 import 'dotenv/config';
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { Pool } from 'pg';
+import { verifyToken, extractTokenFromRequest } from '../utils/jwt';
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method !== 'GET') {
@@ -10,18 +11,25 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   try {
     console.log('👤 User info request received');
     
-    // Check if user is authenticated via session
-    const session = (req as any).session;
-    console.log('🔍 Session data:', session);
+    // Extract token from request
+    const token = extractTokenFromRequest(req);
+    console.log('🔍 Token found:', !!token);
     
-    if (!session || !session.userId) {
-      console.log('❌ No session or userId found');
+    if (!token) {
+      console.log('❌ No token found');
       return res.status(401).json({ message: 'Not authenticated' });
     }
 
-    console.log('🔍 Looking for user with ID:', session.userId);
+    // Verify token
+    const payload = verifyToken(token);
+    if (!payload) {
+      console.log('❌ Invalid token');
+      return res.status(401).json({ message: 'Invalid token' });
+    }
 
-    // Get user data from database
+    console.log('✅ Token verified, user ID:', payload.userId);
+
+    // Get fresh user data from database
     const pool = new Pool({
       connectionString: process.env.DATABASE_URL,
       ssl: { rejectUnauthorized: false }
@@ -32,7 +40,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     try {
       const userResult = await client.query(
         'SELECT id, email, first_name, last_name, profile_image_url, google_id, phone, is_admin FROM users WHERE id = $1',
-        [session.userId]
+        [payload.userId]
       );
 
       if (userResult.rows.length === 0) {

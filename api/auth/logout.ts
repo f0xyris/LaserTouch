@@ -17,22 +17,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   try {
     console.log('🚪 Logout attempt');
     
-    // Destroy session
-    const session = (req as any).session;
-    if (session) {
-      session.destroy((err: any) => {
-        if (err) {
-          console.error('❌ Session destruction error:', err);
-          return res.status(500).json({ error: 'Failed to logout' });
-        }
-        
-        console.log('✅ Session destroyed successfully');
-        res.status(200).json({ message: 'Logged out successfully' });
-      });
-    } else {
-      console.log('✅ No session to destroy');
-      res.status(200).json({ message: 'Logged out successfully' });
-    }
+    // Clear the token cookie
+    res.setHeader('Set-Cookie', 'token=; HttpOnly; Secure; SameSite=Strict; Max-Age=0; Path=/');
+    
+    console.log('✅ Logout successful');
+    res.status(200).json({ message: 'Logged out successfully' });
     
   } catch (error) {
     console.error('❌ Logout error:', error);

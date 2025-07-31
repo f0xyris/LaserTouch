@@ -1,6 +1,7 @@
 import 'dotenv/config';
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { Pool } from 'pg';
+import { generateToken } from '../../utils/jwt';
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   try {
@@ -107,23 +108,21 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         }
       }
       
-      // Set session (simplified for now)
-      const session = (req as any).session;
-      if (session) {
-        session.userId = user.id;
-        session.user = {
-          id: user.id,
-          email: user.email,
-          firstName: user.first_name,
-          lastName: user.last_name,
-          isAdmin: user.is_admin
-        };
-      }
+      // Generate JWT token
+      const token = generateToken({
+        userId: user.id,
+        email: user.email,
+        firstName: user.first_name,
+        lastName: user.last_name,
+        isAdmin: user.is_admin
+      });
       
       console.log('✅ Google OAuth login successful for:', user.email);
+      console.log('🎫 JWT token generated');
       
-      // Redirect to home page
-      res.redirect('/');
+      // Redirect to home page with token in URL (temporary solution)
+      // In production, you'd want to set a cookie or use a more secure method
+      res.redirect(`/?token=${encodeURIComponent(token)}`);
       
     } finally {
       client.release();
