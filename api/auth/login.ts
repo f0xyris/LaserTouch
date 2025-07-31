@@ -53,7 +53,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     try {
       // Find user by email
       const userResult = await client.query(
-        'SELECT id, email, password_hash, first_name, last_name, is_admin FROM users WHERE email = $1',
+        'SELECT id, email, password, first_name, last_name, is_admin FROM users WHERE email = $1',
         [email.toLowerCase()]
       );
 
@@ -66,7 +66,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       console.log('✅ User found:', { id: user.id, email: user.email, isAdmin: user.is_admin });
 
       // Verify password
-      const isValidPassword = await bcrypt.compare(password, user.password_hash);
+      const isValidPassword = await bcrypt.compare(password, user.password);
       
       if (!isValidPassword) {
         console.log('❌ Invalid password for user:', email);
