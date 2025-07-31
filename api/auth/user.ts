@@ -1,7 +1,7 @@
 import 'dotenv/config';
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { Pool } from 'pg';
-import { verifyToken, extractTokenFromRequest } from '../utils/jwt';
+import { verifyToken, extractTokenFromRequest } from './utils/jwt';
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method !== 'GET') {

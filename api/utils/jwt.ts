@@ -1,44 +1,47 @@
 import jwt from 'jsonwebtoken';
+import type { VercelRequest } from '@vercel/node';
 
-const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key-change-in-production';
-
-export interface JWTPayload {
-  userId: number;
-  email: string;
-  firstName?: string;
-  lastName?: string;
-  isAdmin: boolean;
+export function generateToken(userId: number): string {
+  if (!process.env.JWT_SECRET) {
+    throw new Error('JWT_SECRET is not configured');
+  }
+  
+  return jwt.sign({ userId }, process.env.JWT_SECRET, { expiresIn: '7d' });
 }
 
-export function generateToken(payload: JWTPayload): string {
-  return jwt.sign(payload, JWT_SECRET, { expiresIn: '7d' });
-}
-
-export function verifyToken(token: string): JWTPayload | null {
+export function verifyToken(token: string): { userId: number } | null {
+  if (!process.env.JWT_SECRET) {
+    throw new Error('JWT_SECRET is not configured');
+  }
+  
   try {
-    console.log('🔐 Verifying JWT token...');
-    const payload = jwt.verify(token, JWT_SECRET) as JWTPayload;
-    console.log('✅ JWT token verified successfully');
-    return payload;
+    const decoded = jwt.verify(token, process.env.JWT_SECRET) as { userId: number };
+    return decoded;
   } catch (error) {
-    console.error('❌ JWT verification failed:', error);
+    console.log('❌ JWT verification failed:', error);
     return null;
   }
 }
 
-export function extractTokenFromRequest(req: any): string | null {
+export function extractTokenFromRequest(req: VercelRequest): string | null {
+  // Check Authorization header
   const authHeader = req.headers.authorization;
   if (authHeader && authHeader.startsWith('Bearer ')) {
     return authHeader.substring(7);
   }
   
-  // Also check cookies
+  // Check cookies
   const cookies = req.headers.cookie;
   if (cookies) {
-    const tokenMatch = cookies.match(/token=([^;]+)/);
-    if (tokenMatch) {
-      return tokenMatch[1];
+    const tokenCookie = cookies.split(';').find(cookie => cookie.trim().startsWith('token='));
+    if (tokenCookie) {
+      return tokenCookie.split('=')[1];
     }
+  }
+  
+  // Check query parameters
+  if (req.query.token && typeof req.query.token === 'string') {
+    return req.query.token;
   }
   
   return null;
