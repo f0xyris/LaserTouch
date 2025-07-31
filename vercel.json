@@ -16,6 +16,14 @@
       "dest": "/api/test.ts"
     },
     {
+      "src": "/api/auth/login",
+      "dest": "/api/auth/login.ts"
+    },
+    {
+      "src": "/api/auth/user",
+      "dest": "/api/auth/user.ts"
+    },
+    {
       "src": "/api/(.*)",
       "dest": "/api/[...path].ts"
     },
