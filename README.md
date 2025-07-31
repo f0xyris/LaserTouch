@@ -78,7 +78,7 @@ A modern, responsive website for a beauty salon with appointment booking, course
 
 ## 🌐 Deployment
 
-The project is configured for easy deployment on Vercel. See [VERCEL_DEPLOYMENT.md](./VERCEL_DEPLOYMENT.md) for detailed instructions.
+The project is configured for easy deployment on Vercel with automatic database integration using Neon PostgreSQL. See [VERCEL_SETUP.md](./VERCEL_SETUP.md) for deployment instructions.
 
 ## 📧 Email System
 
@@ -87,8 +87,6 @@ The website includes a comprehensive email notification system:
 - **Appointment Submitted** - Confirmation when user books appointment
 - **Appointment Confirmed** - Notification when admin confirms appointment  
 - **Course Purchased** - Confirmation after successful course payment
-
-See [EMAIL_SETUP.md](./EMAIL_SETUP.md) for email configuration details.
 
 ## 🎨 Customization
 

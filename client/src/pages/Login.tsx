@@ -12,6 +12,7 @@ import { LoadingSpinner } from "@/components/LoadingSpinner";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
+import { PasswordInput } from "@/components/PasswordInput";
 
 // Validation schemas
 const createLoginSchema = (t: any) => z.object({
@@ -132,9 +133,8 @@ export default function Login() {
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="password">{t.auth?.password || "Password"}</Label>
-                    <Input
+                    <PasswordInput
                       id="password"
-                      type="password"
                       placeholder={t.auth?.passwordPlaceholder || "Enter your password"}
                       {...loginForm.register("password")}
                     />
@@ -239,9 +239,8 @@ export default function Login() {
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="registerPassword">{t.auth?.password || "Password"}</Label>
-                    <Input
+                    <PasswordInput
                       id="registerPassword"
-                      type="password"
                       placeholder={t.auth?.passwordPlaceholder || "Enter your password"}
                       {...registerForm.register("password")}
                     />
