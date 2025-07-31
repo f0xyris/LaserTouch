@@ -1,9 +1,9 @@
 import 'dotenv/config';
-import express from 'express';
+import express, { type Express } from 'express';
 import { registerRoutes } from "../server/routes";
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 
-let app: express.Application | null = null;
+let app: Express | null = null;
 
 async function createApp() {
   if (!app) {
