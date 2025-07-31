@@ -20,14 +20,6 @@
       "dest": "/api/test-db.ts"
     },
     {
-      "src": "/api/test-password",
-      "dest": "/api/test-password.ts"
-    },
-    {
-      "src": "/api/reset-password",
-      "dest": "/api/reset-password.ts"
-    },
-    {
       "src": "/api/auth/login",
       "dest": "/api/auth/login.ts"
     },
