@@ -38,7 +38,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       profileImageUrl: null,
       googleId: null,
       phone: '+48 123 456 789',
-      isAdmin: false
+      isAdmin: true
     };
     
     console.log('📤 Sending mock user data:', mockUser);
