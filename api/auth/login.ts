@@ -45,8 +45,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       user: {
         id: 1,
         email: email,
-        firstName: 'Test',
-        lastName: 'User',
+        firstName: 'Yaroslav',
+        lastName: 'Antypchuk',
         isAdmin: false
       }
     };
