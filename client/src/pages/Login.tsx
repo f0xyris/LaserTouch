@@ -36,13 +36,13 @@ export default function Login() {
   const loginForm = useForm({
     resolver: zodResolver(createLoginSchema(t)),
     defaultValues: { email: "", password: "" },
-    mode: "onSubmit"
+    mode: "onChange"
   });
   
   const registerForm = useForm({
     resolver: zodResolver(createRegisterSchema(t)),
     defaultValues: { email: "", password: "", firstName: "", lastName: "", phone: "" },
-    mode: "onSubmit"
+    mode: "onChange"
   });
 
   // Check for OAuth error in URL
@@ -58,6 +58,16 @@ export default function Login() {
     }
   }, [toast, t]);
 
+  // Debug form state
+  useEffect(() => {
+    console.log('🔍 Form state changed:');
+    console.log('  Email value:', loginForm.watch('email'));
+    console.log('  Password value length:', loginForm.watch('password')?.length || 0);
+    console.log('  Email error:', loginForm.formState.errors.email?.message);
+    console.log('  Password error:', loginForm.formState.errors.password?.message);
+    console.log('  Is form valid:', loginForm.formState.isValid);
+  }, [loginForm.watch('email'), loginForm.watch('password'), loginForm.formState.errors]);
+
   // Redirect if already logged in
   if (user) {
     return <Redirect to="/" />;
@@ -65,14 +75,26 @@ export default function Login() {
 
   const handleLogin = async (data: any) => {
     try {
-      console.log('Attempting login with:', { email: data.email, password: data.password ? '[HIDDEN]' : 'undefined' });
+      console.log('🔐 Login attempt started');
+      console.log('📧 Email:', data.email);
+      console.log('🔑 Password length:', data.password ? data.password.length : 0);
+      console.log('📋 Form data:', { email: data.email, password: data.password ? '[HIDDEN]' : 'undefined' });
+      
       await loginMutation.mutateAsync(data);
+      
+      console.log('✅ Login successful');
       toast({
         title: t.auth?.loginWelcomeTitle || "Welcome back!",
         description: t.auth?.loginWelcomeCreative || "You look amazing today! Glad to see you again!",
       });
     } catch (error) {
-      console.error('Login error:', error);
+      console.error('❌ Login error:', error);
+      console.error('❌ Error details:', {
+        message: (error as any)?.message,
+        status: (error as any)?.status,
+        response: (error as any)?.response
+      });
+      
       toast({
         title: t.auth?.login || "Login failed",
         description: "Invalid email or password",
