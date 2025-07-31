@@ -2,7 +2,7 @@ import 'dotenv/config';
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { Pool } from 'pg';
 import bcrypt from 'bcryptjs';
-import { generateToken } from './utils/jwt';
+import { generateToken } from '../utils/jwt';
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   // Enable CORS

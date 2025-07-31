@@ -79,13 +79,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       console.log('✅ User created:', { id: newUser.id, email: newUser.email });
 
       // Generate JWT token
-      const token = generateToken({
-        userId: newUser.id,
-        email: newUser.email,
-        firstName: newUser.first_name,
-        lastName: newUser.last_name,
-        isAdmin: newUser.is_admin
-      });
+      const token = generateToken(newUser.id);
 
       console.log('✅ JWT token generated for new user:', newUser.id);
 

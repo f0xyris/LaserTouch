@@ -127,13 +127,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       }
       
       // Generate JWT token
-      const token = generateToken({
-        userId: user.id,
-        email: user.email,
-        firstName: user.first_name,
-        lastName: user.last_name,
-        isAdmin: user.is_admin
-      });
+      const token = generateToken(user.id);
       
       console.log('✅ Google OAuth login successful for:', user.email);
       console.log('🎫 JWT token generated');
