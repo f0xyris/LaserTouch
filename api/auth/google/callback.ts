@@ -8,6 +8,22 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     console.log('🔄 Google OAuth callback received');
     console.log('📝 Query params:', req.query);
     
+    // Check environment variables
+    if (!process.env.GOOGLE_CLIENT_ID || !process.env.GOOGLE_CLIENT_SECRET) {
+      console.error('❌ Google OAuth not configured');
+      return res.redirect('/login?error=oauth_not_configured');
+    }
+    
+    if (!process.env.DATABASE_URL) {
+      console.error('❌ DATABASE_URL not configured');
+      return res.redirect('/login?error=database_not_configured');
+    }
+    
+    if (!process.env.JWT_SECRET) {
+      console.error('❌ JWT_SECRET not configured');
+      return res.redirect('/login?error=jwt_not_configured');
+    }
+    
     const { code, error } = req.query;
     
     if (error) {
@@ -19,6 +35,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       console.error('❌ No authorization code received');
       return res.redirect('/login?error=no_code');
     }
+    
+    console.log('🔑 Exchanging code for tokens...');
     
     // Exchange code for tokens
     const tokenResponse = await fetch('https://oauth2.googleapis.com/token', {
@@ -131,6 +149,13 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     
   } catch (error) {
     console.error('❌ Google OAuth callback error:', error);
+    if (error instanceof Error) {
+      console.error('Error details:', {
+        message: error.message,
+        stack: error.stack,
+        name: error.name
+      });
+    }
     res.redirect('/login?error=oauth_callback_failed');
   }
 } 

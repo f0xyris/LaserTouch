@@ -20,12 +20,27 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   try {
     console.log('🔐 Login attempt started');
     console.log('📧 Request body:', { email: req.body?.email, hasPassword: !!req.body?.password });
+    console.log('🔧 Environment check:', {
+      hasDatabaseUrl: !!process.env.DATABASE_URL,
+      hasJwtSecret: !!process.env.JWT_SECRET,
+      nodeEnv: process.env.NODE_ENV
+    });
     
     const { email, password } = req.body;
     
     if (!email || !password) {
       console.log('❌ Missing email or password');
       return res.status(400).json({ error: 'Email and password are required' });
+    }
+
+    if (!process.env.DATABASE_URL) {
+      console.error('❌ DATABASE_URL not found');
+      return res.status(500).json({ error: 'Database configuration missing' });
+    }
+
+    if (!process.env.JWT_SECRET) {
+      console.error('❌ JWT_SECRET not found');
+      return res.status(500).json({ error: 'JWT configuration missing' });
     }
 
     console.log('🔍 Checking database connection...');

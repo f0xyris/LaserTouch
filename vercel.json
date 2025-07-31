@@ -12,6 +12,10 @@
   ],
   "routes": [
     {
+      "src": "/api/env-check",
+      "dest": "/api/env-check.ts"
+    },
+    {
       "src": "/api/admin-check",
       "dest": "/api/admin-check.ts"
     },
