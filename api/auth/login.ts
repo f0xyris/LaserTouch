@@ -1,17 +1,7 @@
 import 'dotenv/config';
 import type { VercelRequest, VercelResponse } from '@vercel/node';
-import { drizzle } from 'drizzle-orm/node-postgres';
 import { Pool } from 'pg';
-import { users } from '../../shared/schema.js';
-import { eq } from 'drizzle-orm';
 import bcrypt from 'bcryptjs';
-
-// Create database connection
-const pool = new Pool({
-  connectionString: process.env.DATABASE_URL,
-});
-
-const db = drizzle(pool);
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   // Enable CORS
@@ -40,6 +30,14 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     console.log('🔍 Checking database connection...');
     
+    // Create database connection
+    const pool = new Pool({
+      connectionString: process.env.DATABASE_URL,
+      ssl: {
+        rejectUnauthorized: false
+      }
+    });
+    
     // Test database connection
     const client = await pool.connect();
     console.log('✅ Database connected successfully');
@@ -47,14 +45,17 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     try {
       // Get user from database
       console.log('🔍 Searching for user:', email);
-      const userResult = await db.select().from(users).where(eq(users.email, email));
+      const userResult = await client.query(
+        'SELECT id, email, password, first_name, last_name, profile_image_url, google_id, phone, is_admin FROM users WHERE email = $1',
+        [email]
+      );
       
-      if (userResult.length === 0) {
+      if (userResult.rows.length === 0) {
         console.log('❌ User not found:', email);
         return res.status(401).json({ error: 'Invalid email or password' });
       }
 
-      const user = userResult[0];
+      const user = userResult.rows[0];
       console.log('✅ User found:', { id: user.id, email: user.email, hasPassword: !!user.password });
 
       // Check if user has password
@@ -84,6 +85,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     } finally {
       client.release();
+      await pool.end();
     }
 
   } catch (error) {
