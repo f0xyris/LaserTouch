@@ -1,12 +1,12 @@
 import { useRef, useEffect, useState } from 'react';
 
 interface UseScrollAnimationReturn {
-  ref: React.RefObject<HTMLDivElement>;
+  ref: React.RefObject<HTMLElement>;
   isVisible: boolean;
 }
 
 export const useScrollAnimation = (threshold: number = 0.1): UseScrollAnimationReturn => {
-  const ref = useRef<HTMLDivElement>(null);
+  const ref = useRef<HTMLElement>(null);
   const [isVisible, setIsVisible] = useState(false);
 
   useEffect(() => {
