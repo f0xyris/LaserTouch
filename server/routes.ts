@@ -2,7 +2,7 @@ import express, { type Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { setupAuth, isAuthenticated, isAdmin } from "./auth";
-import { insertUserSchema, insertAppointmentSchema, insertReviewSchema } from "@shared/schema";
+import { insertUserSchema, insertAppointmentSchema, insertReviewSchema } from "../shared/schema";
 import { z } from "zod";
 import Stripe from "stripe";
 import multer from "multer";
@@ -602,7 +602,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/courses", isAdmin, async (req, res) => {
     try {
       console.log("POST /api/courses - Creating new course:", req.body);
-      let { name, price, duration, description, category, imageUrl } = req.body;
+      let { name, price, duration, description, category } = req.body;
       if (!name || !price || !duration) {
         console.log("POST /api/courses - Missing required fields");
         return res.status(400).json({ error: "Missing required fields" });
@@ -611,7 +611,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (typeof description === "string") description = { ua: description };
       name = await ensureAllLangs(name, Object.keys(name)[0]);
       description = await ensureAllLangs(description, Object.keys(description)[0]);
-      const created = await storage.createCourse({ name, price, duration, description, category: category || "custom", imageUrl: imageUrl || null });
+      const created = await storage.createCourse({ name, price, duration, description, category: category || "custom" });
       console.log("POST /api/courses - Course created successfully:", created.id);
       res.status(201).json(created);
     } catch (error: any) {

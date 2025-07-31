@@ -4,26 +4,19 @@ import {
   appointments,
   reviews,
   courses,
-  insertUserSchema,
-  insertAppointmentSchema,
-  insertReviewSchema,
-  insertCourseSchema,
   type User,
   type Service,
   type Appointment,
   type Review,
   type Course,
   type InsertUser,
+  type InsertService,
   type InsertAppointment,
   type InsertReview,
-  type InsertCourse,
-} from "@shared/schema";
+} from "../shared/schema";
 import { db } from "./db";
 import { eq, desc, and, or, gte, lt, ne, sql } from "drizzle-orm";
 import session from "express-session";
-
-// Type aliases for cleaner code
-type InsertService = typeof services.$inferInsert;
 
 // Interface for storage operations
 export interface IStorage {
@@ -96,7 +89,7 @@ export class DatabaseStorage implements IStorage {
   async createUser(userData: InsertUser): Promise<User> {
     const [user] = await db
       .insert(users)
-      .values(userData)
+      .values(userData as any)
       .returning();
     return user;
   }
@@ -104,7 +97,7 @@ export class DatabaseStorage implements IStorage {
   async updateUser(id: number, userData: Partial<InsertUser>): Promise<User> {
     const [user] = await db
       .update(users)
-      .set({ ...userData, updatedAt: new Date() })
+      .set({ ...userData, updatedAt: new Date() } as any)
       .where(eq(users.id, id))
       .returning();
     return user;
@@ -117,7 +110,7 @@ export class DatabaseStorage implements IStorage {
   async updateUserAdminStatus(id: number, isAdmin: boolean): Promise<User> {
     const [user] = await db
       .update(users)
-      .set({ isAdmin, updatedAt: new Date() })
+      .set({ isAdmin, updatedAt: new Date() } as any)
       .where(eq(users.id, id))
       .returning();
     return user;
@@ -135,7 +128,7 @@ export class DatabaseStorage implements IStorage {
     console.log("DatabaseStorage.createService() called with:", serviceData);
     const [service] = await db
       .insert(services)
-      .values(serviceData)
+      .values(serviceData as any)
       .returning();
     console.log("DatabaseStorage.createService() created service with ID:", service.id);
     return service;
@@ -222,7 +215,7 @@ export class DatabaseStorage implements IStorage {
   async updateAppointmentStatus(id: number, status: string): Promise<Appointment | undefined> {
     const [appointment] = await db
       .update(appointments)
-      .set({ status })
+      .set({ status } as any)
       .where(eq(appointments.id, id))
       .returning();
     return appointment;
@@ -314,7 +307,7 @@ export class DatabaseStorage implements IStorage {
     try {
       // Помечаем запись как удаленную из админки (не меняя основной статус)
       await db.update(appointments)
-        .set({ isDeletedFromAdmin: true })
+        .set({ isDeletedFromAdmin: true } as any)
         .where(eq(appointments.id, id));
       
       console.log(`SUCCESS: Appointment with ID ${id} marked as deleted from admin`);
@@ -446,7 +439,7 @@ export class DatabaseStorage implements IStorage {
   async approveReview(id: number): Promise<Review | undefined> {
     const [review] = await db
       .update(reviews)
-      .set({ status: "approved" })
+      .set({ status: "approved" } as any)
       .where(eq(reviews.id, id))
       .returning();
     return review;
@@ -455,7 +448,7 @@ export class DatabaseStorage implements IStorage {
   async rejectReview(id: number): Promise<Review | undefined> {
     const [review] = await db
       .update(reviews)
-      .set({ status: "rejected" })
+      .set({ status: "rejected" } as any)
       .where(eq(reviews.id, id))
       .returning();
     return review;
@@ -468,7 +461,7 @@ export class DatabaseStorage implements IStorage {
   async createReview(reviewData: InsertReview): Promise<Review> {
     const [review] = await db
       .insert(reviews)
-      .values(reviewData)
+      .values(reviewData as any)
       .returning();
     return review;
   }

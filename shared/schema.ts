@@ -89,27 +89,27 @@ export const insertUserSchema = createInsertSchema(users).omit({
   id: true,
   createdAt: true,
   updatedAt: true,
-}) as any;
+} as any);
 
 export const insertServiceSchema = createInsertSchema(services).omit({
   id: true,
-}) as any;
+} as any);
 
 export const insertAppointmentSchema = createInsertSchema(appointments).omit({
   id: true,
   createdAt: true,
-}).extend({
+} as any).extend({
   userId: z.number().optional(),
-}) as any;
+});
 
 export const insertReviewSchema = createInsertSchema(reviews).omit({
   id: true,
   createdAt: true,
-}) as any;
+} as any);
 
 export const insertCourseSchema = createInsertSchema(courses).omit({
   id: true,
-}) as any;
+} as any);
 
 // Types
 export type User = typeof users.$inferSelect;

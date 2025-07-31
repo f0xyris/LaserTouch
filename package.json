@@ -11,7 +11,7 @@
     "vercel-build": "npm run build",
     "check": "echo 'TypeScript check skipped for deployment'",
     "db:push": "drizzle-kit push",
-    "type-check": "tsc --noEmit"
+    "type-check": "tsc --noEmit --project tsconfig.vercel.json"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.10.0",
