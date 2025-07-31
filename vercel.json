@@ -16,6 +16,10 @@
       "dest": "/api/test.ts"
     },
     {
+      "src": "/api/test-db",
+      "dest": "/api/test-db.ts"
+    },
+    {
       "src": "/api/auth/login",
       "dest": "/api/auth/login.ts"
     },
