@@ -16,16 +16,16 @@ import { PasswordInput } from "@/components/PasswordInput";
 
 // Validation schemas
 const createLoginSchema = (t: any) => z.object({
-  email: z.string().email(t.auth?.emailInvalid || "Please enter a valid email address"),
-  password: z.string().min(6, t.auth?.passwordMinLength || "Password must be at least 6 characters")
+  email: z.string().min(1, t?.auth?.emailRequired || "Email is required").email(t?.auth?.emailInvalid || "Please enter a valid email address"),
+  password: z.string().min(1, t?.auth?.passwordRequired || "Password is required").min(6, t?.auth?.passwordMinLength || "Password must be at least 6 characters")
 });
 
 const createRegisterSchema = (t: any) => z.object({
-  email: z.string().email(t.auth?.emailInvalid || "Please enter a valid email address"),
-  password: z.string().min(6, t.auth?.passwordMinLength || "Password must be at least 6 characters"),
-  firstName: z.string().min(1, t.auth?.firstNameRequired || "First name is required"),
-  lastName: z.string().min(1, t.auth?.lastNameRequired || "Last name is required"),
-  phone: z.string().min(1, t.auth?.phoneRequired || "Phone number is required")
+  email: z.string().min(1, t?.auth?.emailRequired || "Email is required").email(t?.auth?.emailInvalid || "Please enter a valid email address"),
+  password: z.string().min(1, t?.auth?.passwordRequired || "Password is required").min(6, t?.auth?.passwordMinLength || "Password must be at least 6 characters"),
+  firstName: z.string().min(1, t?.auth?.firstNameRequired || "First name is required"),
+  lastName: z.string().min(1, t?.auth?.lastNameRequired || "Last name is required"),
+  phone: z.string().min(1, t?.auth?.phoneRequired || "Phone number is required")
 });
 
 export default function Login() {
@@ -35,12 +35,14 @@ export default function Login() {
   
   const loginForm = useForm({
     resolver: zodResolver(createLoginSchema(t)),
-    defaultValues: { email: "", password: "" }
+    defaultValues: { email: "", password: "" },
+    mode: "onChange"
   });
   
   const registerForm = useForm({
     resolver: zodResolver(createRegisterSchema(t)),
-    defaultValues: { email: "", password: "", firstName: "", lastName: "", phone: "" }
+    defaultValues: { email: "", password: "", firstName: "", lastName: "", phone: "" },
+    mode: "onChange"
   });
 
   // Check for OAuth error in URL
