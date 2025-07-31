@@ -13,17 +13,22 @@ export async function apiRequest(
   url: string,
   body?: any
 ): Promise<Response> {
-  const response = await fetch(url, {
-    method,
-    headers: {
-      "Content-Type": "application/json",
-    },
-    credentials: "include",
-    body: body ? JSON.stringify(body) : undefined,
-  });
+  try {
+    const response = await fetch(url, {
+      method,
+      headers: {
+        "Content-Type": "application/json",
+      },
+      credentials: "include",
+      body: body ? JSON.stringify(body) : undefined,
+    });
 
-  await throwIfResNotOk(response);
-  return response;
+    await throwIfResNotOk(response);
+    return response;
+  } catch (error) {
+    console.error('API request failed:', { method, url, error });
+    throw error;
+  }
 }
 
 type UnauthorizedBehavior = "returnNull" | "throw";

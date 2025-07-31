@@ -15,14 +15,26 @@ const Navigation = () => {
   const { t } = useLanguage();
   const { user, isAuthenticated, isLoading, logoutMutation } = useAuth();
 
-  const navigationItems = useMemo(() => [
-    { href: "/", label: t.home },
-    { href: "/booking", label: t.booking },
-    { href: "/training", label: t.training },
-    { href: "/reviews", label: t.reviews },
-    ...(isAuthenticated ? [{ href: "/account", label: t.account }] : []),
-    ...(isAuthenticated && user?.isAdmin ? [{ href: "/admin", label: t.admin }] : []),
-  ], [t, isAuthenticated, user?.isAdmin]);
+  const navigationItems = useMemo(() => {
+    const items = [
+      { href: "/", label: t.home },
+      { href: "/booking", label: t.booking },
+      { href: "/training", label: t.training },
+      { href: "/reviews", label: t.reviews },
+    ];
+    
+    // Добавляем ссылку на аккаунт только если пользователь аутентифицирован
+    if (isAuthenticated && user) {
+      items.push({ href: "/account", label: t.account });
+    }
+    
+    // Добавляем ссылку на админку только если пользователь админ
+    if (isAuthenticated && user?.isAdmin) {
+      items.push({ href: "/admin", label: t.admin });
+    }
+    
+    return items;
+  }, [t, isAuthenticated, user]);
 
   const isActive = useCallback((href: string) => {
     if (href === "/") {
@@ -107,12 +119,12 @@ const Navigation = () => {
         <>
           {isAuthenticated ? (
             <div className="flex items-center space-x-2">
-              <span className="text-sm text-gray-600 dark:text-gray-400 truncate max-w-[100px]">
+              <span className="text-sm text-gray-600 dark:text-gray-400 truncate max-w-[120px]">
                 {user?.firstName && user?.lastName 
                   ? `${user.firstName} ${user.lastName}` 
                   : user?.firstName 
                     ? user.firstName 
-                    : user?.email?.split('@')[0] || user?.email}
+                    : user?.email?.split('@')[0] || user?.email || 'User'}
               </span>
               <Button
                 variant="ghost"

@@ -14,6 +14,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     // Extract token from request
     const token = extractTokenFromRequest(req);
     console.log('🔍 Token found:', !!token);
+    console.log('🔍 Token length:', token ? token.length : 0);
     
     if (!token) {
       console.log('❌ No token found');

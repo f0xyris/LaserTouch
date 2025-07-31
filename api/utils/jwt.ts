@@ -16,9 +16,12 @@ export function generateToken(payload: JWTPayload): string {
 
 export function verifyToken(token: string): JWTPayload | null {
   try {
-    return jwt.verify(token, JWT_SECRET) as JWTPayload;
+    console.log('🔐 Verifying JWT token...');
+    const payload = jwt.verify(token, JWT_SECRET) as JWTPayload;
+    console.log('✅ JWT token verified successfully');
+    return payload;
   } catch (error) {
-    console.error('JWT verification failed:', error);
+    console.error('❌ JWT verification failed:', error);
     return null;
   }
 }

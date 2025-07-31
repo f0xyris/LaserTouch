@@ -30,6 +30,7 @@ export function useAuth() {
     const urlParams = new URLSearchParams(window.location.search);
     const token = urlParams.get('token');
     if (token) {
+      console.log('Token found in URL, storing...');
       setStoredToken(token);
       // Remove token from URL
       window.history.replaceState({}, document.title, window.location.pathname);
@@ -38,7 +39,7 @@ export function useAuth() {
     }
   }, [queryClient]);
 
-  const { data: user, isLoading } = useQuery<User | null>({
+  const { data: user, isLoading, error } = useQuery<User | null>({
     queryKey: ["/api/auth/user"],
     queryFn: async () => {
       try {
@@ -64,11 +65,14 @@ export function useAuth() {
         
         return response.json();
       } catch (error) {
+        console.error('Error fetching user:', error);
         removeStoredToken();
         return null;
       }
     },
     retry: false,
+    refetchOnWindowFocus: false,
+    staleTime: 5 * 60 * 1000, // 5 minutes
   });
 
   const loginMutation = useMutation({
@@ -84,7 +88,13 @@ export function useAuth() {
       return data;
     },
     onSuccess: (data) => {
+      // Обновляем данные пользователя в кэше
       queryClient.setQueryData(["/api/auth/user"], data.user);
+      // Принудительно обновляем запрос для синхронизации состояния
+      queryClient.invalidateQueries({ queryKey: ["/api/auth/user"] });
+    },
+    onError: (error) => {
+      console.error('Login mutation error:', error);
     },
   });
 
@@ -106,7 +116,13 @@ export function useAuth() {
       return data;
     },
     onSuccess: (data) => {
+      // Обновляем данные пользователя в кэше
       queryClient.setQueryData(["/api/auth/user"], data.user);
+      // Принудительно обновляем запрос для синхронизации состояния
+      queryClient.invalidateQueries({ queryKey: ["/api/auth/user"] });
+    },
+    onError: (error) => {
+      console.error('Register mutation error:', error);
     },
   });
 
