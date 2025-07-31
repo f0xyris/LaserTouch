@@ -15,14 +15,6 @@ const Navigation = () => {
   const { t } = useLanguage();
   const { user, isAuthenticated, isLoading, logoutMutation } = useAuth();
 
-  // Отладочная информация
-  console.log('Navigation Debug:', { 
-    user, 
-    isAuthenticated, 
-    isLoading, 
-    userIsAdmin: user?.isAdmin 
-  });
-
   const navigationItems = useMemo(() => {
     const items = [
       { href: "/", label: t.home },
