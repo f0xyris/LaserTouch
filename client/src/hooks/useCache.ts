@@ -107,13 +107,11 @@ export function useCacheRefresh() {
   const queryClient = useQueryClient();
 
   useEffect(() => {
-    console.log('useCacheRefresh: отключен для тестирования');
     
     // Временно отключаем все автоматические обновления
     /*
     // Function to refresh cache on page focus
     const handleFocus = () => {
-      console.log('Page focused, refreshing cache...');
       // Invalidate and refetch critical queries
       queryClient.invalidateQueries({ queryKey: ["/api/services"] });
       queryClient.invalidateQueries({ queryKey: ["/api/courses"] });
@@ -124,14 +122,12 @@ export function useCacheRefresh() {
     // Function to refresh cache on page visibility change
     const handleVisibilityChange = () => {
       if (!document.hidden) {
-        console.log('Page became visible, refreshing cache...');
         handleFocus();
       }
     };
 
     // Function to refresh cache on page load
     const handleLoad = () => {
-      console.log('Page loaded, refreshing cache...');
       handleFocus();
     };
 
@@ -154,13 +150,11 @@ export function useCacheRefresh() {
 
   // Function to manually refresh all cache
   const refreshAllCache = () => {
-    console.log('Manually refreshing all cache...');
     queryClient.invalidateQueries();
   };
 
   // Function to refresh specific cache
   const refreshCache = (queryKey: string[]) => {
-    console.log('Manually refreshing cache for:', queryKey);
     queryClient.invalidateQueries({ queryKey });
   };
 

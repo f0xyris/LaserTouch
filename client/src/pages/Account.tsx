@@ -60,7 +60,6 @@ export default function Account() {
       });
     },
     onError: (error) => {
-      console.error("Error updating profile:", error);
       toast({
         title: t.error || "Ошибка",
         description: t.error || "Не удалось обновить профиль",
@@ -330,7 +329,7 @@ export default function Account() {
                           className="flex-1 bg-gradient-to-r from-mystical-500 to-mystical-600 hover:from-mystical-600 hover:to-mystical-700 text-white"
                         >
                           {updateProfileMutation.isPending ? (
-                            <LoadingSpinner />
+                            <LoadingSpinner size="sm" text={t.saving || "Saving..."} horizontal />
                           ) : (
                             t.save || "Save Changes"
                           )}
@@ -351,7 +350,12 @@ export default function Account() {
                   variant="outline" 
                   className="w-full"
                   onClick={async () => {
-                    await fetch("/api/auth/logout", { method: "POST", credentials: "include" });
+                    const token = localStorage.getItem('auth_token');
+                    await fetch("/api/auth/logout", { 
+                      method: "POST", 
+                      credentials: "include",
+                      headers: token ? { 'Authorization': `Bearer ${token}` } : {}
+                    });
                     setLocation("/login", { replace: true });
                   }}
                 >

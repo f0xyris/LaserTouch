@@ -7,7 +7,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
 import { useLanguage } from "@/contexts/LanguageContext";
-import { Redirect } from "wouter";
+import { useLocation } from "wouter";
 import { LoadingSpinner } from "@/components/LoadingSpinner";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -29,10 +29,12 @@ const createRegisterSchema = (t: any) => z.object({
 });
 
 export default function Login() {
-  const { user, loginMutation, registerMutation } = useAuth();
   const { t } = useLanguage();
+  const { loginMutation, registerMutation, isAuthenticated, isLoading } = useAuth();
   const { toast } = useToast();
-  
+  const [, setLocation] = useLocation();
+
+  // Initialize forms unconditionally (all hooks must be called at the top level)
   const loginForm = useForm({
     resolver: zodResolver(createLoginSchema(t)),
     defaultValues: { email: "", password: "" },
@@ -44,6 +46,13 @@ export default function Login() {
     defaultValues: { email: "", password: "", firstName: "", lastName: "", phone: "" },
     mode: "onChange"
   });
+
+  // Handle authentication redirect in useEffect
+  useEffect(() => {
+    if (isAuthenticated && !isLoading) {
+      setLocation("/");
+    }
+  }, [isAuthenticated, isLoading, setLocation]);
 
   // Check for OAuth error in URL
   useEffect(() => {
@@ -58,11 +67,6 @@ export default function Login() {
     }
   }, [toast, t]);
 
-  // Redirect if already logged in
-  if (user) {
-    return <Redirect to="/" />;
-  }
-
   const handleLogin = async (data: any) => {
     try {
       await loginMutation.mutateAsync(data);
@@ -70,8 +74,11 @@ export default function Login() {
         title: t.auth?.loginWelcomeTitle || "Welcome back!",
         description: t.auth?.loginWelcomeCreative || "You look amazing today! Glad to see you again!",
       });
+      // Небольшая задержка перед перенаправлением, чтобы пользователь увидел тост
+      setTimeout(() => {
+        setLocation("/");
+      }, 1000);
     } catch (error) {
-      console.error('Login error:', error);
       toast({
         title: t.auth?.login || "Login failed",
         description: "Invalid email or password",
@@ -87,6 +94,10 @@ export default function Login() {
         title: t.auth?.register || "Registration successful",
         description: "Welcome to LaserTouch!",
       });
+      // Небольшая задержка перед перенаправлением, чтобы пользователь увидел тост
+      setTimeout(() => {
+        setLocation("/");
+      }, 1000);
     } catch (error) {
       toast({
         title: t.auth?.register || "Registration failed",
@@ -99,6 +110,24 @@ export default function Login() {
   const handleGoogleLogin = () => {
     window.location.href = "/api/auth/google";
   };
+
+  // Show loading spinner while checking authentication
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <LoadingSpinner />
+      </div>
+    );
+  }
+
+  // Don't render the form if already authenticated (redirect will happen in useEffect)
+  if (isAuthenticated) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <LoadingSpinner />
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-sage-50 to-sage-100 dark:from-sage-900 dark:to-sage-800 p-4">
@@ -151,10 +180,7 @@ export default function Login() {
                     disabled={loginMutation.isPending}
                   >
                     {loginMutation.isPending ? (
-                      <div className="flex items-center justify-center gap-2">
-                        <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                        <span>{t.auth?.loggingIn || "Logging in..."}</span>
-                      </div>
+                      <LoadingSpinner size="sm" text={t.auth?.loggingIn || "Logging in..."} horizontal />
                     ) : (
                       t.auth?.login || "Login"
                     )}
@@ -257,10 +283,7 @@ export default function Login() {
                     disabled={registerMutation.isPending}
                   >
                     {registerMutation.isPending ? (
-                      <div className="flex items-center justify-center gap-2">
-                        <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                        <span>{t.auth?.registering || "Registering..."}</span>
-                      </div>
+                      <LoadingSpinner size="sm" text={t.auth?.registering || "Registering..."} horizontal />
                     ) : (
                       t.auth?.register || "Register"
                     )}

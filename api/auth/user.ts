@@ -1,7 +1,7 @@
 import 'dotenv/config';
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { Pool } from 'pg';
-import { verifyToken, extractTokenFromRequest } from '../utils/jwt';
+import { verifyToken, extractTokenFromRequest } from '../../shared/jwt';
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method !== 'GET') {
@@ -9,27 +9,20 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   }
 
   try {
-    console.log('👤 User info request received');
-    
-    // Extract token from request
+    // Extract token from request (same as local)
     const token = extractTokenFromRequest(req);
-    console.log('🔍 Token found:', !!token);
     
     if (!token) {
-      console.log('❌ No token found');
       return res.status(401).json({ message: 'Not authenticated' });
     }
 
-    // Verify token
+    // Verify token (same as local)
     const payload = verifyToken(token);
     if (!payload) {
-      console.log('❌ Invalid token');
       return res.status(401).json({ message: 'Invalid token' });
     }
 
-    console.log('✅ Token verified, user ID:', payload.userId);
-
-    // Get fresh user data from database
+    // Get fresh user data from database (same as local)
     const pool = new Pool({
       connectionString: process.env.DATABASE_URL,
       ssl: { rejectUnauthorized: false }
@@ -44,18 +37,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       );
 
       if (userResult.rows.length === 0) {
-        console.log('❌ User not found in database');
         return res.status(401).json({ message: 'User not found' });
       }
 
       const user = userResult.rows[0];
-      console.log('✅ User found:', {
-        id: user.id,
-        email: user.email,
-        firstName: user.first_name,
-        lastName: user.last_name,
-        isAdmin: user.is_admin
-      });
       
       const responseData = {
         id: user.id,
@@ -68,7 +53,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         isAdmin: user.is_admin
       };
       
-      console.log('📤 Sending user data:', responseData);
       res.status(200).json(responseData);
 
     } finally {

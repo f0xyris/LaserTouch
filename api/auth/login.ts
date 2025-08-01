@@ -2,7 +2,7 @@ import 'dotenv/config';
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { Pool } from 'pg';
 import bcrypt from 'bcryptjs';
-import { generateToken } from '../utils/jwt';
+import { generateToken } from '../../shared/jwt';
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   // Enable CORS
@@ -19,15 +19,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   }
 
   try {
-    console.log('🔐 Login attempt started');
-    
     const { email, password } = req.body;
     
     if (!email || !password) {
       return res.status(400).json({ error: 'Email and password are required' });
     }
-
-    console.log('📧 Login attempt for:', email);
     
     // Check environment variables
     if (!process.env.DATABASE_URL) {
@@ -40,9 +36,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       return res.status(500).json({ error: 'JWT configuration missing' });
     }
 
-    console.log('✅ Environment variables check passed');
+
     
-    // Connect to database
+    // Connect to database (same as local)
     const pool = new Pool({
       connectionString: process.env.DATABASE_URL,
       ssl: { rejectUnauthorized: false }
@@ -51,36 +47,35 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const client = await pool.connect();
     
     try {
-      console.log('🔍 Searching for user with email:', email);
-      
-      // Find user by email
+      // Find user by email (same query as local)
       const userResult = await client.query(
         'SELECT id, email, first_name, last_name, password, is_admin FROM users WHERE email = $1',
         [email]
       );
 
       if (userResult.rows.length === 0) {
-        console.log('❌ User not found');
         return res.status(401).json({ error: 'Invalid email or password' });
       }
 
       const user = userResult.rows[0];
-      console.log('✅ User found:', { id: user.id, email: user.email, firstName: user.first_name, lastName: user.last_name });
 
-      // Verify password
+      // Verify password using bcrypt (same as local)
       const isValidPassword = await bcrypt.compare(password, user.password);
       
       if (!isValidPassword) {
-        console.log('❌ Invalid password');
         return res.status(401).json({ error: 'Invalid email or password' });
       }
 
-      console.log('✅ Password verified successfully');
-
-      // Generate JWT token
-      const token = generateToken(user.id);
-      console.log('🔐 JWT token generated');
-
+      // Generate JWT token (same as local)
+      
+      const token = generateToken({
+        userId: user.id,
+        email: user.email,
+        firstName: user.first_name,
+        lastName: user.last_name,
+        isAdmin: user.is_admin
+      });
+      
       const responseData = {
         token,
         user: {
@@ -92,7 +87,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         }
       };
 
-      console.log('📤 Login successful, sending response');
       res.status(200).json(responseData);
 
     } finally {

@@ -16,7 +16,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   }
 
   try {
-    console.log('📚 Fetching courses...');
+  
     
     const pool = new Pool({
       connectionString: process.env.DATABASE_URL,
@@ -46,7 +46,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         ORDER BY created_at DESC
       `);
       
-      console.log(`✅ Found ${coursesResult.rows.length} courses`);
+  
       
       const courses = coursesResult.rows.map(course => ({
         id: course.id,

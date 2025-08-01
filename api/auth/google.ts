@@ -16,7 +16,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   }
 
   try {
-    console.log('🔍 Google OAuth initiated');
+
     
     // Check if Google OAuth is configured
     if (!process.env.GOOGLE_CLIENT_ID || !process.env.GOOGLE_CLIENT_SECRET) {
@@ -35,8 +35,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       `access_type=offline&` +
       `prompt=consent`;
     
-    console.log('🔗 Redirecting to Google OAuth:', googleAuthUrl);
-    console.log('📍 Redirect URI:', redirectUri);
+
     res.redirect(googleAuthUrl);
     
   } catch (error) {

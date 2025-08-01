@@ -5,8 +5,7 @@ import { generateToken } from '../../utils/jwt';
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   try {
-    console.log('🔄 Google OAuth callback received');
-    console.log('📝 Query params:', req.query);
+    
     
     // Check environment variables
     if (!process.env.GOOGLE_CLIENT_ID || !process.env.GOOGLE_CLIENT_SECRET) {
@@ -36,7 +35,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       return res.redirect('/login?error=no_code');
     }
     
-    console.log('🔑 Exchanging code for tokens...');
+
     
     // Exchange code for tokens
     const tokenResponse = await fetch('https://oauth2.googleapis.com/token', {
@@ -60,7 +59,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       return res.redirect('/login?error=token_exchange_failed');
     }
     
-    console.log('✅ Token exchange successful');
+
     
     // Get user info from Google
     const userInfoResponse = await fetch('https://www.googleapis.com/oauth2/v2/userinfo', {
@@ -76,11 +75,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       return res.redirect('/login?error=user_info_failed');
     }
     
-    console.log('✅ User info received:', { 
-      id: userInfo.id, 
-      email: userInfo.email, 
-      name: userInfo.name 
-    });
+
     
     // Connect to database
     const pool = new Pool({
@@ -101,7 +96,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       
       if (userResult.rows.length === 0) {
         // Create new user
-        console.log('👤 Creating new user from Google OAuth');
         const newUserResult = await client.query(
           `INSERT INTO users (email, first_name, last_name, google_id, is_admin, created_at, updated_at) 
            VALUES ($1, $2, $3, $4, $5, NOW(), NOW()) 
@@ -129,8 +123,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       // Generate JWT token
       const token = generateToken(user.id);
       
-      console.log('✅ Google OAuth login successful for:', user.email);
-      console.log('🎫 JWT token generated');
+
       
       // Redirect to home page with token in URL (temporary solution)
       // In production, you'd want to set a cookie or use a more secure method

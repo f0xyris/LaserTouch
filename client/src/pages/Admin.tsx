@@ -55,6 +55,8 @@ const Admin = () => {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [searchTerm, setSearchTerm] = useState("");
+  
+
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(new Date());
   const [tabValue, setTabValue] = useState("users");
   
@@ -68,12 +70,6 @@ const Admin = () => {
     clientName: ""
   });
   const [calendarOpen, setCalendarOpen] = useState(false);
-
-  // Email test state
-  const [testEmail, setTestEmail] = useState("");
-  const [testEmailType, setTestEmailType] = useState("");
-  const [testEmailLanguage, setTestEmailLanguage] = useState("ua");
-  const [isTestEmailLoading, setIsTestEmailLoading] = useState(false);
 
   // Update form date when selected date changes
   useEffect(() => {
@@ -96,15 +92,30 @@ const Admin = () => {
   const [approving, setApproving] = useReactState<number | null>(null);
   const fetchReviews = () => {
     setReviewsTab(r => ({ ...r, loading: true }));
-    fetch("/api/reviews/all", { credentials: "include" })
-      .then(res => res.json())
-      .then(data => setReviewsTab({ loading: false, data }))
-      .catch(() => setReviewsTab({ loading: false, data: [] }));
+    const token = localStorage.getItem('auth_token');
+    fetch("/api/reviews/all", { 
+      credentials: "include",
+      headers: token ? { 'Authorization': `Bearer ${token}` } : {}
+    })
+      .then(res => {
+        return res.json();
+      })
+      .then(data => {
+        setReviewsTab({ loading: false, data });
+      })
+      .catch((error) => {
+        setReviewsTab({ loading: false, data: [] });
+      });
   };
   useEffect(() => { fetchReviews(); }, []);
   const approveReview = async (id: number) => {
     setApproving(id);
-    await fetch(`/api/reviews/${id}/approve`, { method: "POST", credentials: "include" });
+    const token = localStorage.getItem('auth_token');
+    await fetch(`/api/reviews/${id}/approve`, { 
+      method: "POST", 
+      credentials: "include",
+      headers: token ? { 'Authorization': `Bearer ${token}` } : {}
+    });
     fetchReviews();
     setApproving(null);
   };
@@ -112,9 +123,13 @@ const Admin = () => {
   const rejectReview = async (id: number) => {
     setApproving(id);
     try {
-      const res = await fetch(`/api/reviews/${id}/reject`, { method: "POST", credentials: "include" });
+      const token = localStorage.getItem('auth_token');
+      const res = await fetch(`/api/reviews/${id}/reject`, { 
+        method: "POST", 
+        credentials: "include",
+        headers: token ? { 'Authorization': `Bearer ${token}` } : {}
+      });
       const data = await res.json();
-      console.log('Reject response:', res.status, data);
       if (!res.ok) {
         alert('Error: ' + (data?.error || res.status));
       }
@@ -131,7 +146,12 @@ const Admin = () => {
   const deleteReview = async (id: number) => {
     setApproving(id);
     try {
-      const res = await fetch(`/api/reviews/${id}`, { method: "DELETE", credentials: "include" });
+      const token = localStorage.getItem('auth_token');
+      const res = await fetch(`/api/reviews/${id}`, { 
+        method: "DELETE", 
+        credentials: "include",
+        headers: token ? { 'Authorization': `Bearer ${token}` } : {}
+      });
       let data = null;
       try {
         data = await res.clone().json();
@@ -160,13 +180,17 @@ const Admin = () => {
   const { data: users, isLoading, error } = useQuery<User[]>({
     queryKey: ["/api/users"],
     queryFn: async () => {
+      const token = localStorage.getItem('auth_token');
       const response = await fetch("/api/users", {
         credentials: "include",
+        headers: token ? { 'Authorization': `Bearer ${token}` } : {}
       });
+      
       if (!response.ok) {
         throw new Error("Failed to fetch users");
       }
-      return response.json();
+      const data = await response.json();
+      return data;
     },
     enabled: !!currentUser?.isAdmin,
   });
@@ -175,22 +199,19 @@ const Admin = () => {
   const { data: appointments, isLoading: appointmentsLoading, refetch: refetchAppointments } = useQuery({
     queryKey: ["/api/appointments"],
     queryFn: async () => {
+      const token = localStorage.getItem('auth_token');
       const response = await fetch("/api/appointments", {
         credentials: "include",
         headers: {
           'Cache-Control': 'no-cache',
-          'Pragma': 'no-cache'
+          'Pragma': 'no-cache',
+          ...(token ? { 'Authorization': `Bearer ${token}` } : {})
         }
       });
       if (!response.ok) {
         throw new Error("Failed to fetch appointments");
       }
       const data = await response.json();
-      console.log('All appointments from server:', data);
-      if (data && data.length > 0) {
-        console.log('First appointment full data:', JSON.stringify(data[0], null, 2));
-        console.log('First appointment keys:', Object.keys(data[0]));
-      }
       return data;
     },
     enabled: !!currentUser?.isAdmin,
@@ -199,10 +220,12 @@ const Admin = () => {
   // Update appointment status mutation
   const updateAppointmentStatusMutation = useMutation({
     mutationFn: async ({ appointmentId, status }: { appointmentId: number; status: string }) => {
+      const token = localStorage.getItem('auth_token');
       const response = await fetch(`/api/appointments/${appointmentId}/status`, {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
+          ...(token ? { 'Authorization': `Bearer ${token}` } : {})
         },
         credentials: "include",
         body: JSON.stringify({ status }),
@@ -216,6 +239,7 @@ const Admin = () => {
       queryClient.invalidateQueries({ queryKey: ["/api/appointments"] });
       queryClient.invalidateQueries({ queryKey: ["/api/appointments/recent"] });
       queryClient.invalidateQueries({ queryKey: ["/api/appointments/user"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/appointments/by-date"] });
       
       // Принудительно перезагружаем данные
       setTimeout(() => {
@@ -240,12 +264,14 @@ const Admin = () => {
   // Delete appointment mutation
   const deleteAppointmentMutation = useMutation({
     mutationFn: async (appointmentId: number) => {
+      const token = localStorage.getItem('auth_token');
       const response = await fetch(`/api/appointments/${appointmentId}`, {
         method: "DELETE",
         credentials: "include",
         headers: {
           'Cache-Control': 'no-cache',
-          'Pragma': 'no-cache'
+          'Pragma': 'no-cache',
+          ...(token ? { 'Authorization': `Bearer ${token}` } : {})
         }
       });
       if (!response.ok) {
@@ -253,27 +279,23 @@ const Admin = () => {
       }
     },
     onSuccess: () => {
-      console.log("Appointment deleted successfully, updating cache...");
       
       // Принудительно обновляем все связанные запросы
       queryClient.invalidateQueries({ queryKey: ["/api/appointments"] });
       queryClient.invalidateQueries({ queryKey: ["/api/appointments/recent"] });
       queryClient.invalidateQueries({ queryKey: ["/api/appointments/user"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/appointments/by-date"] });
       
       // Также обновляем данные напрямую
       queryClient.setQueryData(["/api/appointments"], (oldData: any) => {
-        console.log("Updating appointments cache, old data:", oldData);
         if (!oldData) return oldData;
         const filteredData = oldData.filter((appointment: any) => appointment.id !== openDeleteAppointmentDialogId);
-        console.log("Filtered appointments data:", filteredData);
         return filteredData;
       });
       
       queryClient.setQueryData(["/api/appointments/recent"], (oldData: any) => {
-        console.log("Updating recent appointments cache, old data:", oldData);
         if (!oldData) return oldData;
         const filteredData = oldData.filter((appointment: any) => appointment.id !== openDeleteAppointmentDialogId);
-        console.log("Filtered recent appointments data:", filteredData);
         return filteredData;
       });
       
@@ -314,42 +336,6 @@ const Admin = () => {
     }
   };
 
-  // Email test function
-  const handleTestEmail = async () => {
-    if (!testEmail || !testEmailType) return;
-
-    setIsTestEmailLoading(true);
-    try {
-      const response = await apiRequest("POST", "/api/test-email", {
-        email: testEmail,
-        type: testEmailType,
-        language: testEmailLanguage
-      });
-
-      if (response.ok) {
-        toast({
-          title: "Success",
-          description: "Test email sent successfully!",
-        });
-      } else {
-        const error = await response.json();
-        toast({
-          title: "Error",
-          description: error.error || "Failed to send test email",
-          variant: "destructive",
-        });
-      }
-    } catch (error: any) {
-      toast({
-        title: "Error",
-        description: error.message || "Failed to send test email",
-        variant: "destructive",
-      });
-    } finally {
-      setIsTestEmailLoading(false);
-    }
-  };
-
   // Admin appointment creation functions
   const handleCreateFormChange = (field: string, value: string) => {
     setCreateFormData(prev => ({ ...prev, [field]: value }));
@@ -383,10 +369,12 @@ const Admin = () => {
   // Create appointment mutation for admin
   const createAppointmentMutation = useMutation({
     mutationFn: async (appointmentData: any) => {
+      const token = localStorage.getItem('authToken');
       const response = await fetch("/api/appointments/admin", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
+          ...(token ? { 'Authorization': `Bearer ${token}` } : {})
         },
         credentials: "include",
         body: JSON.stringify(appointmentData),
@@ -403,6 +391,7 @@ const Admin = () => {
       queryClient.invalidateQueries({ queryKey: ["/api/appointments/recent"] });
       queryClient.invalidateQueries({ queryKey: ["/api/appointments/user"] });
       queryClient.invalidateQueries({ queryKey: ["/api/appointments", createFormData.date] });
+      queryClient.invalidateQueries({ queryKey: ["/api/appointments/by-date"] });
       
       // Reset form
       setCreateFormData({
@@ -506,8 +495,7 @@ const Admin = () => {
       }
     };
 
-    // Log the appointment data for debugging
-    console.log('Creating admin appointment:', appointmentData);
+
 
     createAppointmentMutation.mutate(appointmentData);
   };
@@ -516,22 +504,19 @@ const Admin = () => {
   const { data: recentAppointments, isLoading: recentLoading, refetch: refetchRecentAppointments } = useQuery({
     queryKey: ["/api/appointments/recent"],
     queryFn: async () => {
+      const token = localStorage.getItem('auth_token');
       const response = await fetch("/api/appointments/recent", {
         credentials: "include",
         headers: {
           'Cache-Control': 'no-cache',
-          'Pragma': 'no-cache'
+          'Pragma': 'no-cache',
+          ...(token ? { 'Authorization': `Bearer ${token}` } : {})
         }
       });
       if (!response.ok) {
         throw new Error("Failed to fetch recent appointments");
       }
       const data = await response.json();
-      console.log('Recent appointments from server:', data);
-      if (data && data.length > 0) {
-        console.log('First recent appointment full data:', JSON.stringify(data[0], null, 2));
-        console.log('First recent appointment keys:', Object.keys(data[0]));
-      }
       return data;
     },
   });
@@ -540,7 +525,10 @@ const Admin = () => {
   const { data: services, isLoading: servicesLoading } = useQuery({
     queryKey: ["/api/services"],
     queryFn: async () => {
-      const response = await fetch("/api/services");
+      const token = localStorage.getItem('auth_token');
+      const response = await fetch("/api/services", {
+        headers: token ? { 'Authorization': `Bearer ${token}` } : {}
+      });
       if (!response.ok) throw new Error("Failed to fetch services");
       return response.json();
     }
@@ -551,11 +539,13 @@ const Admin = () => {
     queryKey: ["/api/appointments", createFormData.date],
     queryFn: async () => {
       if (!createFormData.date) return [];
+      const token = localStorage.getItem('auth_token');
       const response = await fetch("/api/appointments", {
         credentials: "include",
         headers: {
           'Cache-Control': 'no-cache',
-          'Pragma': 'no-cache'
+          'Pragma': 'no-cache',
+          ...(token ? { 'Authorization': `Bearer ${token}` } : {})
         }
       });
       if (!response.ok) throw new Error("Failed to fetch appointments");
@@ -585,7 +575,6 @@ const Admin = () => {
       });
     },
     onError: (error) => {
-      console.error("Error updating admin status:", error);
       toast({
         title: t.error || t.adminStatusUpdateFailed || "Error",
         description: t.adminStatusUpdateFailed || "Failed to update admin status",
@@ -744,10 +733,6 @@ const Admin = () => {
           </TabsTrigger>
           <TabsTrigger value="prices" className="flex items-center gap-2 px-2 py-2 sm:py-3 text-xs sm:text-base whitespace-nowrap">
             <Tag className="h-4 w-4 sm:h-5 sm:w-5 text-mystical-600 data-[state=active]:!text-white hidden lg:inline" />{t.pricesTab || "Prices & duration"}
-          </TabsTrigger>
-          <TabsTrigger value="email-test" className="flex items-center gap-2 px-2 py-2 sm:py-3 text-xs sm:text-base whitespace-nowrap">
-            <Mail className="h-4 w-4 sm:h-5 sm:w-5 text-mystical-600 data-[state=active]:!text-white hidden lg:inline" />
-            Email Test
           </TabsTrigger>
         </TabsList>
 
@@ -1355,10 +1340,7 @@ const Admin = () => {
                         className="bg-gradient-to-r from-mystical-500 to-accent-500 text-white hover:from-mystical-600 hover:to-accent-600"
                       >
                         {createAppointmentMutation.isPending ? (
-                          <div className="flex items-center">
-                            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                            {t.processing || "Processing..."}
-                          </div>
+                          <LoadingSpinner size="sm" text={t.processing || "Processing..."} horizontal />
                         ) : (
                           t.create || "Create"
                         )}
@@ -1569,9 +1551,14 @@ function PricesEditor() {
 
   useEffect(() => {
     setLoading(true);
+    const token = localStorage.getItem('authToken');
     Promise.all([
-      fetch("/api/courses").then(r => r.json()).catch(() => []),
-      fetch("/api/services").then(r => r.json()).catch(() => []),
+      fetch("/api/courses", {
+        headers: token ? { 'Authorization': `Bearer ${token}` } : {}
+      }).then(r => r.json()).catch(() => []),
+      fetch("/api/services", {
+        headers: token ? { 'Authorization': `Bearer ${token}` } : {}
+      }).then(r => r.json()).catch(() => []),
     ]).then(([courses, services]) => {
       // Проверяем, что это массивы
       setCourses(Array.isArray(courses) ? courses : []);
@@ -1594,13 +1581,17 @@ function PricesEditor() {
     description: any
   ) => {
     setSavingId(`${type}-${id}`);
+    const token = localStorage.getItem('auth_token');
     const url = type === "course" ? `/api/courses/${id}` : `/api/services/${id}`;
     const body: any = { price: Number(price), duration: Number(duration) };
     if (name !== undefined) body.name = name;
     if (description !== undefined) body.description = description;
     const res = await fetch(url, {
       method: "PUT",
-      headers: { "Content-Type": "application/json" },
+      headers: { 
+        "Content-Type": "application/json",
+        ...(token ? { 'Authorization': `Bearer ${token}` } : {})
+      },
       credentials: "include",
       body: JSON.stringify(body)
     });
@@ -1610,6 +1601,8 @@ function PricesEditor() {
         setCourses(courses => courses.map(c => c.id === id ? { ...c, price, duration, name, description } : c));
       } else {
         setServices(services => services.map(s => s.id === id ? { ...s, price, duration, name, description } : s));
+        // Invalidate services cache to update booking page
+        queryClient.invalidateQueries({ queryKey: ["/api/services"] });
       }
     } else {
       toast({ title: t.error || t.saveError || "Error", description: t.saveError || "Error saving", variant: "destructive" });
@@ -1619,13 +1612,17 @@ function PricesEditor() {
 
   const handleDeleteService = async (id: number) => {
     setSavingId(`delete-${id}`);
+    const token = localStorage.getItem('auth_token');
     const res = await fetch(`/api/services/${id}`, {
       method: "DELETE",
-      credentials: "include"
+      credentials: "include",
+      headers: token ? { 'Authorization': `Bearer ${token}` } : {}
     });
     if (res.ok) {
       setServices(services => services.filter(s => s.id !== id));
       toast({ title: t.success || t.deleted || "Success", description: t.deleted || "Deleted" });
+      // Invalidate services cache to update booking page
+      queryClient.invalidateQueries({ queryKey: ["/api/services"] });
     } else {
       toast({ title: t.error || t.deleteError || "Error", description: t.deleteError || "Error deleting", variant: "destructive" });
     }
@@ -1639,9 +1636,13 @@ function PricesEditor() {
       return;
     }
     setSavingId("add-service");
+    const token = localStorage.getItem('auth_token');
     const res = await fetch("/api/services", {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: { 
+        "Content-Type": "application/json",
+        ...(token ? { 'Authorization': `Bearer ${token}` } : {})
+      },
       credentials: "include",
       body: JSON.stringify({
         name: newService.name,
@@ -1666,9 +1667,11 @@ function PricesEditor() {
 
   const handleDeleteCourse = async (id: number) => {
     setSavingId(`delete-course-${id}`);
+    const token = localStorage.getItem('auth_token');
     const res = await fetch(`/api/courses/${id}`, {
       method: "DELETE",
-      credentials: "include"
+      credentials: "include",
+      headers: token ? { 'Authorization': `Bearer ${token}` } : {}
     });
     if (res.ok) {
       setCourses(courses => courses.filter(c => c.id !== id));
@@ -1690,9 +1693,11 @@ function PricesEditor() {
     if (newCourse.file) {
       const formData = new FormData();
       formData.append("file", newCourse.file);
+      const token = localStorage.getItem('auth_token');
       const res = await fetch("/api/upload", {
         method: "POST",
         credentials: "include",
+        headers: token ? { 'Authorization': `Bearer ${token}` } : {},
         body: formData
       });
       if (res.ok) {
@@ -1704,9 +1709,13 @@ function PricesEditor() {
         return;
       }
     }
+    const token = localStorage.getItem('auth_token');
     const res = await fetch("/api/courses", {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: { 
+        "Content-Type": "application/json",
+        ...(token ? { 'Authorization': `Bearer ${token}` } : {})
+      },
       credentials: "include",
       body: JSON.stringify({
         name: newCourse.name,
@@ -1931,7 +1940,7 @@ function PricesEditor() {
               <div key={service.id} className="bg-white dark:bg-card rounded-lg shadow-md p-4 flex flex-col gap-3 border border-mystical-100 dark:border-mystical-700 min-h-[420px]">
                 <div className="flex flex-col gap-2">
                   <div className="font-semibold text-xs text-muted-foreground mb-1">Service name</div>
-                  <Input className="h-10" value={typeof service.name === 'object' ? (service.name.ua || '') : service.name} onChange={e => setServices(ss => ss.map((s, i) => i === idx ? { ...s, name: { ...s.name, ua: e.target.value } } : s))} placeholder="UA" />
+                  <Input className="h-10" value={typeof service.name === 'object' ? (service.name.ua || '') : (service.name || '')} onChange={e => setServices(ss => ss.map((s, i) => i === idx ? { ...s, name: { ...s.name, ua: e.target.value } } : s))} placeholder="UA" />
                   <Input className="h-10" value={typeof service.name === 'object' ? (service.name.en || '') : ''} onChange={e => setServices(ss => ss.map((s, i) => i === idx ? { ...s, name: { ...s.name, en: e.target.value } } : s))} placeholder="EN" />
                   <Input className="h-10" value={typeof service.name === 'object' ? (service.name.pl || '') : ''} onChange={e => setServices(ss => ss.map((s, i) => i === idx ? { ...s, name: { ...s.name, pl: e.target.value } } : s))} placeholder="PL" />
                 </div>
@@ -1988,104 +1997,6 @@ function PricesEditor() {
           </div>
         </div>
       </div>
-
-      {/* Email Test Tab */}
-      <TabsContent value="email-test">
-        <Card className="shadow-xl dark:shadow-mystical-500/10 bg-background dark:bg-card">
-          <CardHeader>
-            <CardTitle className="text-xl text-mystical-500 dark:text-mystical-400 flex items-center gap-2">
-              <Mail className="h-5 w-5" />
-              Email Test
-            </CardTitle>
-            <CardDescription>
-              Test email notifications for appointments and course purchases
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-6">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="space-y-4">
-                  <h3 className="text-lg font-semibold">Test Email Notifications</h3>
-                  
-                  <div className="space-y-2">
-                    <Label htmlFor="test-email">Email Address</Label>
-                    <Input 
-                      id="test-email" 
-                      type="email" 
-                      placeholder="test@example.com"
-                      value={testEmail}
-                      onChange={(e) => setTestEmail(e.target.value)}
-                    />
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label>Email Type</Label>
-                    <Select value={testEmailType} onValueChange={setTestEmailType}>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select email type" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="appointment-submitted">Appointment Submitted</SelectItem>
-                        <SelectItem value="appointment-confirmed">Appointment Confirmed</SelectItem>
-                        <SelectItem value="course-purchased">Course Purchased</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label>Language</Label>
-                    <Select value={testEmailLanguage} onValueChange={setTestEmailLanguage}>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select language" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="ua">Ukrainian</SelectItem>
-                        <SelectItem value="en">English</SelectItem>
-                        <SelectItem value="ru">Russian</SelectItem>
-                        <SelectItem value="pl">Polish</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-
-                  <Button 
-                    onClick={handleTestEmail}
-                    disabled={!testEmail || !testEmailType || isTestEmailLoading}
-                    className="w-full"
-                  >
-                    {isTestEmailLoading ? (
-                      <>
-                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                        Sending...
-                      </>
-                    ) : (
-                      'Send Test Email'
-                    )}
-                  </Button>
-                </div>
-
-                <div className="space-y-4">
-                  <h3 className="text-lg font-semibold">Email Configuration</h3>
-                  <div className="text-sm text-muted-foreground space-y-2">
-                    <p><strong>SMTP Host:</strong> Configure in server .env file</p>
-                    <p><strong>SMTP Port:</strong> Configure in server .env file</p>
-                    <p><strong>SMTP User:</strong> Configure in server .env file</p>
-                    <p><strong>Webhook Secret:</strong> Configure in server .env file</p>
-                  </div>
-                  
-                  <div className="p-4 bg-muted rounded-lg">
-                    <h4 className="font-semibold mb-2">Email Types:</h4>
-                    <ul className="text-sm space-y-1">
-                      <li>• <strong>Appointment Submitted:</strong> Sent when user creates appointment</li>
-                      <li>• <strong>Appointment Confirmed:</strong> Sent when admin confirms appointment</li>
-                      <li>• <strong>Course Purchased:</strong> Sent when payment is completed</li>
-                    </ul>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      </TabsContent>
     </div>
   );
 }

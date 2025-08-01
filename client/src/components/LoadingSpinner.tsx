@@ -4,9 +4,10 @@ interface LoadingSpinnerProps {
   size?: "sm" | "md" | "lg";
   text?: string;
   fullScreen?: boolean;
+  horizontal?: boolean; // New prop for horizontal layout
 }
 
-export function LoadingSpinner({ size = "md", text, fullScreen = false }: LoadingSpinnerProps) {
+export function LoadingSpinner({ size = "md", text, fullScreen = false, horizontal = false }: LoadingSpinnerProps) {
   const { t } = useLanguage();
   
   const sizeClasses = {
@@ -22,7 +23,7 @@ export function LoadingSpinner({ size = "md", text, fullScreen = false }: Loadin
   };
 
   const spinner = (
-    <div className="flex flex-col items-center justify-center space-y-4">
+    <div className={`flex ${horizontal ? 'flex-row items-center space-x-2' : 'flex-col items-center justify-center space-y-4'}`}>
       {/* Elegant spinning flower/star animation */}
       <div className={`${sizeClasses[size]} relative`}>
         <div className="absolute inset-0 animate-spin">
@@ -57,16 +58,20 @@ export function LoadingSpinner({ size = "md", text, fullScreen = false }: Loadin
       </div>
       
       {/* Loading text */}
-      <div className={`${textSizeClasses[size]} text-sage-700 font-medium animate-pulse`}>
-        {text || t.common?.loading || "Loading..."}
-      </div>
+      {text && (
+        <div className={`${textSizeClasses[size]} text-sage-700 font-medium ${horizontal ? '' : 'animate-pulse'}`}>
+          {text}
+        </div>
+      )}
       
-      {/* Animated dots */}
-      <div className="flex space-x-1">
-        <div className="w-2 h-2 bg-sage-400 rounded-full animate-bounce"></div>
-        <div className="w-2 h-2 bg-sage-400 rounded-full animate-bounce" style={{animationDelay: "0.1s"}}></div>
-        <div className="w-2 h-2 bg-sage-400 rounded-full animate-bounce" style={{animationDelay: "0.2s"}}></div>
-      </div>
+      {/* Animated dots - only show when not horizontal */}
+      {!horizontal && (
+        <div className="flex space-x-1">
+          <div className="w-2 h-2 bg-sage-400 rounded-full animate-bounce"></div>
+          <div className="w-2 h-2 bg-sage-400 rounded-full animate-bounce" style={{animationDelay: "0.1s"}}></div>
+          <div className="w-2 h-2 bg-sage-400 rounded-full animate-bounce" style={{animationDelay: "0.2s"}}></div>
+        </div>
+      )}
     </div>
   );
 

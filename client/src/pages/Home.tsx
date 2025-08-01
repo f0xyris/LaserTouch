@@ -52,7 +52,7 @@ const ServicesSection = ({ t }: { t: any }) => {
   ], [t]);
 
   return (
-    <AnimatedSection className="py-20 bg-card dark:bg-card" delay={0.2}>
+    <AnimatedSection className="py-20 bg-white dark:bg-card" delay={0.2}>
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <AnimatedText className="text-center mb-16" delay={0.3}>
           <AnimatedLetters
@@ -106,7 +106,7 @@ const FeaturesSection = ({ t }: { t: any }) => {
   ], [t]);
 
   return (
-    <AnimatedSection className="py-20 bg-background dark:bg-background" delay={0.1}>
+    <AnimatedSection className="py-20 bg-white dark:bg-background" delay={0.1}>
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="grid lg:grid-cols-2 gap-12 items-center">
           <AnimatedImage 
@@ -246,12 +246,12 @@ const Home = () => {
       <FeaturesSection t={t} />
 
       {/* Staff Slider Section */}
-      <Suspense fallback={<div className="py-20 bg-muted/50 dark:bg-muted/50"><LoadingSpinner /></div>}>
+      <Suspense fallback={<div className="py-20 bg-white dark:bg-muted/50"><LoadingSpinner /></div>}>
         <LazyStaffSlider />
       </Suspense>
 
       {/* Location Map Section */}
-      <Suspense fallback={<div className="py-20 bg-background dark:bg-background"><LoadingSpinner /></div>}>
+      <Suspense fallback={<div className="py-20 bg-white dark:bg-background"><LoadingSpinner /></div>}>
         <LazyLocationMap />
       </Suspense>
     </main>

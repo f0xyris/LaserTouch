@@ -30,9 +30,9 @@ async function applyMigrations(pool: Pool) {
         ALTER TABLE appointments 
         ADD COLUMN is_deleted_from_admin boolean DEFAULT false
       `);
-      console.log('✅ Поле is_deleted_from_admin добавлено в таблицу appointments');
+
     } else {
-      console.log('ℹ️ Поле is_deleted_from_admin уже существует');
+      // Field already exists
     }
     
     // Исправляем старые записи
@@ -43,7 +43,7 @@ async function applyMigrations(pool: Pool) {
     `);
     
     if (updateResult.rowCount && updateResult.rowCount > 0) {
-      console.log(`✅ Обновлено ${updateResult.rowCount} старых записей (deleted -> isDeletedFromAdmin = true)`);
+  
     }
     
     client.release();

@@ -366,6 +366,7 @@ export interface Translations {
   timeSlotAvailable: string;
   pastTimeError: string;
   timeSlotAlreadyBooked: string;
+  booked: string;
   deleteAppointment: string;
   deleteAppointmentConfirm: string;
   appointmentDeleted: string;
@@ -687,6 +688,7 @@ export const translations: Record<Language, Translations> = {
     timeSlotAvailable: "Time slot is available",
     pastTimeError: "Cannot book appointments in the past",
     timeSlotAlreadyBooked: "This time slot is already booked",
+    booked: "Booked",
     deleteAppointment: "Delete Appointment",
     deleteAppointmentConfirm: "Are you sure you want to remove this appointment from the admin panel? (It will remain visible in user accounts)",
     appointmentDeleted: "Appointment removed from admin panel",
@@ -1007,6 +1009,7 @@ export const translations: Record<Language, Translations> = {
     timeSlotAvailable: "Termin jest dostępny",
     pastTimeError: "Nie można rezerwować wizyt w przeszłości",
     timeSlotAlreadyBooked: "Ten termin jest już zarezerwowany",
+    booked: "Zarezerwowany",
     deleteAppointment: "Usuń Wizytę",
     deleteAppointmentConfirm: "Czy na pewno chcesz usunąć tę wizytę z panelu administratora? (Pozostanie widoczna w kontach użytkowników)",
     appointmentDeleted: "Wizyta usunięta z panelu administratora",
@@ -1327,6 +1330,7 @@ export const translations: Record<Language, Translations> = {
     timeSlotAvailable: "Час доступний",
     pastTimeError: "Не можна бронювати записи в минулому",
     timeSlotAlreadyBooked: "Цей час вже заброньований",
+    booked: "Заброньовано",
     deleteAppointment: "Видалити Запис",
     deleteAppointmentConfirm: "Ви впевнені, що хочете видалити цей запис з панелі адміністратора? (Він залишиться видимим в облікових записах користувачів)",
     appointmentDeleted: "Запис видалено з панелі адміністратора",

@@ -5,7 +5,8 @@ import { useLocation, useSearch } from "wouter";
 import { useToast } from "@/hooks/use-toast";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useEffect } from "react";
-import { Loader2, CheckCircle } from "lucide-react";
+import { CheckCircle } from "lucide-react";
+import { LoadingSpinner } from "@/components/LoadingSpinner";
 import type { Course } from "@shared/schema";
 
 const Training = () => {
@@ -56,10 +57,7 @@ const Training = () => {
   if (isLoading) {
     return (
       <div className="h-screen flex items-center justify-center">
-        <div className="text-center">
-          <Loader2 className="animate-spin w-8 h-8 border-4 border-primary border-t-transparent rounded-full mx-auto mb-4" />
-          <p className="text-muted-foreground">{t.loading}</p>
-        </div>
+        <LoadingSpinner />
       </div>
     );
   }

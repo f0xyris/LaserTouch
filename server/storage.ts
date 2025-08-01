@@ -128,19 +128,15 @@ export class DatabaseStorage implements IStorage {
 
   // Service operations
   async getAllServices(): Promise<Service[]> {
-    console.log("DatabaseStorage.getAllServices() called");
     const servicesData = await db.select().from(services);
-    console.log(`DatabaseStorage.getAllServices() returned ${servicesData.length} services`);
     return servicesData;
   }
 
   async createService(serviceData: InsertService): Promise<Service> {
-    console.log("DatabaseStorage.createService() called with:", serviceData);
     const [service] = await db
       .insert(services)
       .values(serviceData as any)
       .returning();
-    console.log("DatabaseStorage.createService() created service with ID:", service.id);
     return service;
   }
 
@@ -150,25 +146,20 @@ export class DatabaseStorage implements IStorage {
   }
 
   async updateService(id: number, data: Partial<Service>): Promise<Service> {
-    console.log('updateService called', { id, data });
     const [service] = await db
       .update(services)
       .set({ ...data })
       .where(eq(services.id, id))
       .returning();
-    console.log('updateService result', service);
     return service;
   }
 
   async deleteService(id: number): Promise<void> {
-    console.log("DatabaseStorage.deleteService() called with ID:", id);
     await db.delete(services).where(eq(services.id, id));
-    console.log("DatabaseStorage.deleteService() completed for ID:", id);
   }
 
   // Appointment operations
   async getAllAppointments(): Promise<any[]> {
-    console.log("getAllAppointments - Executing query");
     const result = await db
       .select({
         id: appointments.id,
@@ -199,25 +190,6 @@ export class DatabaseStorage implements IStorage {
       .leftJoin(services, eq(appointments.serviceId, services.id))
       .where(eq(appointments.isDeletedFromAdmin, false)) // Исключаем записи, удаленные из админки
       .orderBy(desc(appointments.createdAt));
-    
-    console.log(`getAllAppointments - Found ${result.length} appointments:`, result.map(a => ({ 
-      id: a.id, 
-      date: a.appointmentDate, 
-      status: a.status,
-      clientName: a.clientName,
-      user: a.user
-    })));
-    
-    // Подробное логирование первой записи для отладки
-    if (result.length > 0) {
-      console.log("First appointment full data:", JSON.stringify(result[0], null, 2));
-      console.log("First appointment clientName:", result[0].clientName);
-      console.log("First appointment user:", result[0].user);
-      console.log("First appointment clientName type:", typeof result[0].clientName);
-      console.log("First appointment clientName === null:", result[0].clientName === null);
-      console.log("First appointment clientName === undefined:", result[0].clientName === undefined);
-      console.log("First appointment all keys:", Object.keys(result[0]));
-    }
     
     return result;
   }
@@ -303,14 +275,10 @@ export class DatabaseStorage implements IStorage {
   }
 
   async deleteAppointment(id: number): Promise<void> {
-    console.log(`Attempting to mark appointment as deleted from admin with ID: ${id}`);
-    
     // Сначала проверим, существует ли запись
     const existingAppointment = await db.select().from(appointments).where(eq(appointments.id, id));
-    console.log(`Existing appointment before marking as deleted from admin:`, existingAppointment);
     
     if (existingAppointment.length === 0) {
-      console.log(`Appointment with ID ${id} not found`);
       return;
     }
     
@@ -320,7 +288,7 @@ export class DatabaseStorage implements IStorage {
         .set({ isDeletedFromAdmin: true } as any)
         .where(eq(appointments.id, id));
       
-      console.log(`SUCCESS: Appointment with ID ${id} marked as deleted from admin`);
+  
     } catch (error) {
       console.error(`Error marking appointment ${id} as deleted from admin:`, error);
       throw error;
@@ -369,18 +337,11 @@ export class DatabaseStorage implements IStorage {
     // Убираем clientInfo из данных, так как мы уже извлекли нужные поля
     delete appointmentDataForClient.clientInfo;
     
-    console.log("Creating appointment with data:", appointmentDataForClient);
-    console.log("Original clientInfo:", appointmentData.clientInfo);
-    console.log("Extracted clientName:", appointmentData.clientInfo?.name);
-    console.log("appointmentDataForClient.clientName:", appointmentDataForClient.clientName);
-    
     const [appointment] = await db
       .insert(appointments)
       .values(appointmentDataForClient)
       .returning();
     
-    console.log("Created appointment:", appointment);
-    console.log("Created appointment clientName:", appointment.clientName);
     return appointment;
   }
 
@@ -416,23 +377,6 @@ export class DatabaseStorage implements IStorage {
       .where(eq(appointments.isDeletedFromAdmin, false)) // Исключаем записи, удаленные из админки
       .orderBy(desc(appointments.createdAt))
       .limit(limit);
-    
-    console.log(`getRecentAppointments - Found ${result.length} appointments:`, result.map(a => ({ 
-      id: a.id, 
-      date: a.appointmentDate, 
-      status: a.status,
-      clientName: a.clientName,
-      user: a.user
-    })));
-    
-    // Подробное логирование первой записи для отладки
-    if (result.length > 0) {
-      console.log("First recent appointment full data:", JSON.stringify(result[0], null, 2));
-      console.log("First recent appointment clientName:", result[0].clientName);
-      console.log("First recent appointment clientName type:", typeof result[0].clientName);
-      console.log("First recent appointment clientName === null:", result[0].clientName === null);
-      console.log("First recent appointment clientName === undefined:", result[0].clientName === undefined);
-    }
     
     return result;
   }
@@ -478,21 +422,17 @@ export class DatabaseStorage implements IStorage {
 
   // Course operations
   async getAllCourses(): Promise<Course[]> {
-    console.log("DatabaseStorage.getAllCourses() called");
     const coursesData = await db.select().from(courses);
-    console.log(`DatabaseStorage.getAllCourses() returned ${coursesData.length} courses`);
     return coursesData;
   }
 
   async createCourse(courseData: typeof courses.$inferInsert): Promise<Course> {
-    console.log("DatabaseStorage.createCourse() called with:", courseData);
     // Не передавать id, чтобы база сама назначила уникальный id
     const { id, ...data } = courseData as any;
     const [course] = await db
       .insert(courses)
       .values(data)
       .returning();
-    console.log("DatabaseStorage.createCourse() created course with ID:", course.id);
     return course;
   }
 
@@ -507,20 +447,16 @@ export class DatabaseStorage implements IStorage {
   }
 
   async updateCourse(id: number, data: Partial<Course>): Promise<Course> {
-    console.log('updateCourse called', { id, data });
     const [course] = await db
       .update(courses)
       .set({ ...data })
       .where(eq(courses.id, id))
       .returning();
-    console.log('updateCourse result', course);
     return course;
   }
 
   async deleteCourse(id: number): Promise<void> {
-    console.log("DatabaseStorage.deleteCourse() called with ID:", id);
     await db.delete(courses).where(eq(courses.id, id));
-    console.log("DatabaseStorage.deleteCourse() completed for ID:", id);
   }
 }
 

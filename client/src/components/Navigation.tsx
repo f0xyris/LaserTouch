@@ -120,11 +120,7 @@ const Navigation = () => {
           {isAuthenticated ? (
             <div className="flex items-center space-x-2">
               <span className="text-sm text-gray-600 dark:text-gray-400 truncate max-w-[120px]">
-                {user?.firstName && user?.lastName 
-                  ? `${user.firstName} ${user.lastName}` 
-                  : user?.firstName 
-                    ? user.firstName 
-                    : user?.email?.split('@')[0] || user?.email || 'User'}
+                {user?.firstName || user?.email?.split('@')[0] || user?.email || 'User'}
               </span>
               <Button
                 variant="ghost"

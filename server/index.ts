@@ -52,18 +52,10 @@ app.use((req, res, next) => {
 if (process.argv[1].includes('index.ts')) {
   (async () => {
     try {
-      console.log('🚀 Starting server...');
-      console.log('📦 Environment variables:');
-      console.log('  - DATABASE_URL:', process.env.DATABASE_URL ? 'Set' : 'Not set');
-      console.log('  - SESSION_SECRET:', process.env.SESSION_SECRET ? 'Set' : 'Not set');
-      console.log('  - BASE_URL:', process.env.BASE_URL || 'Not set');
-      console.log('  - NODE_ENV:', process.env.NODE_ENV || 'Not set');
+      
       
       const app = createServer();
-      console.log('✅ Express app created');
-      
-      const server = await registerRoutes(app);
-      console.log('✅ Routes registered');
+              const server = await registerRoutes(app);
 
       app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
         const status = err.status || err.statusCode || 500;
@@ -77,13 +69,9 @@ if (process.argv[1].includes('index.ts')) {
       // setting up all the other routes so the catch-all route
       // doesn't interfere with the other routes
       if (app.get("env") === "development") {
-        console.log('🔧 Setting up Vite for development...');
         await setupVite(app, server);
-        console.log('✅ Vite setup complete');
       } else {
-        console.log('📁 Setting up static file serving...');
         serveStatic(app);
-        console.log('✅ Static file serving setup complete');
       }
 
       // ALWAYS serve the app on the port specified in the environment variable PORT

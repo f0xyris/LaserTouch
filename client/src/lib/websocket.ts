@@ -10,7 +10,7 @@ class WebSocketManager {
 
   connect(url: string) {
     // Disabled - let Vite handle HMR
-    console.log('Custom WebSocket disabled - Vite handles HMR');
+    // Custom WebSocket disabled - Vite handles HMR
   }
 
   private attemptReconnect(url: string) {

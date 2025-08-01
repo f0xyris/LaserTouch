@@ -25,17 +25,25 @@ export function useAuth() {
   const queryClient = useQueryClient();
   const [location, setLocation] = useLocation();
 
-  // Check for token in URL (from Google OAuth)
+  // Check for auth data in URL (from Google OAuth)
   useEffect(() => {
     const urlParams = new URLSearchParams(window.location.search);
-    const token = urlParams.get('token');
-    if (token) {
-      console.log('Token found in URL, storing...');
-      setStoredToken(token);
-      // Remove token from URL
-      window.history.replaceState({}, document.title, window.location.pathname);
-      // Refresh user data
-      queryClient.invalidateQueries({ queryKey: ["/api/auth/user"] });
+    const authData = urlParams.get('auth');
+    if (authData) {
+      try {
+        const decodedData = JSON.parse(decodeURIComponent(authData));
+        if (decodedData.token) {
+          setStoredToken(decodedData.token);
+          // Store user data in cache
+          queryClient.setQueryData(["/api/auth/user"], decodedData.user);
+        }
+        // Remove auth data from URL
+        window.history.replaceState({}, document.title, window.location.pathname);
+        // Refresh user data
+        queryClient.invalidateQueries({ queryKey: ["/api/auth/user"] });
+      } catch (error) {
+        console.error("Error parsing auth data:", error);
+      }
     }
   }, [queryClient]);
 
@@ -44,6 +52,7 @@ export function useAuth() {
     queryFn: async () => {
       try {
         const token = getStoredToken();
+        
         if (!token) {
           return null;
         }
@@ -63,9 +72,9 @@ export function useAuth() {
           throw new Error("Failed to fetch user");
         }
         
-        return response.json();
+        const userData = await response.json();
+        return userData;
       } catch (error) {
-        console.error('Error fetching user:', error);
         removeStoredToken();
         return null;
       }
@@ -83,6 +92,8 @@ export function useAuth() {
       // Store token
       if (data.token) {
         setStoredToken(data.token);
+      } else {
+        // No token in response!
       }
       
       return data;
@@ -94,7 +105,7 @@ export function useAuth() {
       queryClient.invalidateQueries({ queryKey: ["/api/auth/user"] });
     },
     onError: (error) => {
-      console.error('Login mutation error:', error);
+      // Login mutation error:
     },
   });
 
@@ -122,7 +133,7 @@ export function useAuth() {
       queryClient.invalidateQueries({ queryKey: ["/api/auth/user"] });
     },
     onError: (error) => {
-      console.error('Register mutation error:', error);
+      // Register mutation error:
     },
   });
 

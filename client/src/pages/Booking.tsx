@@ -69,7 +69,6 @@ const Booking = () => {
     
     return bookedAppointments.some((appointment: any) => {
       const appointmentDate = new Date(appointment.appointmentDate);
-      // Only consider appointments that are not cancelled, completed, or deleted from admin
       return appointmentDate.getTime() === selectedDateTime.getTime() && 
              appointment.status !== 'cancelled' && 
              appointment.status !== 'completed' &&
@@ -119,7 +118,6 @@ const Booking = () => {
       });
     },
     onError: (error: any) => {
-      console.error("Error creating appointment:", error);
       toast({
         title: t.error || "Error",
         description: t.appointmentError || "Failed to create appointment",
@@ -172,6 +170,8 @@ const Booking = () => {
       return;
     }
     
+
+    
     // Check availability before creating appointment
     try {
       const availabilityResponse = await fetch("/api/appointments/check-availability", {
@@ -200,7 +200,6 @@ const Booking = () => {
         return;
       }
     } catch (error) {
-      console.error("Error checking availability:", error);
       toast({
         title: t.error || "Error",
         description: t.appointmentError || "Failed to check availability",
@@ -276,7 +275,7 @@ const Booking = () => {
                   <SelectContent className="dark:bg-background dark:border-mystical-700">
                     {services?.map((service: any) => (
                       <SelectItem key={service.id} value={service.id.toString()}>
-                        {String(service.name?.[language] || service.name?.ua)} - {service.price / 100} zł ({service.duration} {t.minutes})
+                        {service.name?.[language] || service.name?.ua || service.name?.en || 'Service'} - {service.price / 100} zł ({service.duration} {t.minutes})
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -317,6 +316,7 @@ const Booking = () => {
                 <Label htmlFor="time" className="block text-sm font-medium text-foreground dark:text-foreground mb-2">
                   {t.selectTime}
                 </Label>
+
                 <Select value={formData.time} onValueChange={(value) => handleInputChange("time", value)}>
                   <SelectTrigger className="dark:bg-background dark:border-mystical-700">
                     <SelectValue placeholder={t.selectTime} />
@@ -329,9 +329,9 @@ const Booking = () => {
                       <SelectItem 
                         value="09:00" 
                         disabled 
-                        className={getAppointmentStatus("09:00") === "confirmed" ? "text-gray-500" : "text-orange-500"}
+                        className="text-gray-500 cursor-not-allowed"
                       >
-                        09:00 - {getAppointmentStatus("09:00") === "confirmed" ? t.confirmed : t.pending}
+                        09:00 - {t.booked}
                       </SelectItem>
                     )}
                     
@@ -342,9 +342,9 @@ const Booking = () => {
                       <SelectItem 
                         value="10:00" 
                         disabled 
-                        className={getAppointmentStatus("10:00") === "confirmed" ? "text-gray-500" : "text-orange-500"}
+                        className="text-gray-500 cursor-not-allowed"
                       >
-                        10:00 - {getAppointmentStatus("10:00") === "confirmed" ? t.confirmed : t.pending}
+                        10:00 - {t.booked}
                       </SelectItem>
                     )}
                     
@@ -355,9 +355,9 @@ const Booking = () => {
                       <SelectItem 
                         value="11:00" 
                         disabled 
-                        className={getAppointmentStatus("11:00") === "confirmed" ? "text-gray-500" : "text-orange-500"}
+                        className="text-gray-500 cursor-not-allowed"
                       >
-                        11:00 - {getAppointmentStatus("11:00") === "confirmed" ? t.confirmed : t.pending}
+                        11:00 - {t.booked}
                       </SelectItem>
                     )}
                     
@@ -368,9 +368,9 @@ const Booking = () => {
                       <SelectItem 
                         value="12:00" 
                         disabled 
-                        className={getAppointmentStatus("12:00") === "confirmed" ? "text-gray-500" : "text-orange-500"}
+                        className="text-gray-500 cursor-not-allowed"
                       >
-                        12:00 - {getAppointmentStatus("12:00") === "confirmed" ? t.confirmed : t.pending}
+                        12:00 - {t.booked}
                       </SelectItem>
                     )}
                     
@@ -381,9 +381,9 @@ const Booking = () => {
                       <SelectItem 
                         value="13:00" 
                         disabled 
-                        className={getAppointmentStatus("13:00") === "confirmed" ? "text-gray-500" : "text-orange-500"}
+                        className="text-gray-500 cursor-not-allowed"
                       >
-                        13:00 - {getAppointmentStatus("13:00") === "confirmed" ? t.confirmed : t.pending}
+                        13:00 - {t.booked}
                       </SelectItem>
                     )}
                     
@@ -394,9 +394,9 @@ const Booking = () => {
                       <SelectItem 
                         value="14:00" 
                         disabled 
-                        className={getAppointmentStatus("14:00") === "confirmed" ? "text-gray-500" : "text-orange-500"}
+                        className="text-gray-500 cursor-not-allowed"
                       >
-                        14:00 - {getAppointmentStatus("14:00") === "confirmed" ? t.confirmed : t.pending}
+                        14:00 - {t.booked}
                       </SelectItem>
                     )}
                     
@@ -407,9 +407,9 @@ const Booking = () => {
                       <SelectItem 
                         value="15:00" 
                         disabled 
-                        className={getAppointmentStatus("15:00") === "confirmed" ? "text-gray-500" : "text-orange-500"}
+                        className="text-gray-500 cursor-not-allowed"
                       >
-                        15:00 - {getAppointmentStatus("15:00") === "confirmed" ? t.confirmed : t.pending}
+                        15:00 - {t.booked}
                       </SelectItem>
                     )}
                     
@@ -420,9 +420,9 @@ const Booking = () => {
                       <SelectItem 
                         value="16:00" 
                         disabled 
-                        className={getAppointmentStatus("16:00") === "confirmed" ? "text-gray-500" : "text-orange-500"}
+                        className="text-gray-500 cursor-not-allowed"
                       >
-                        16:00 - {getAppointmentStatus("16:00") === "confirmed" ? t.confirmed : t.pending}
+                        16:00 - {t.booked}
                       </SelectItem>
                     )}
                     
@@ -433,9 +433,9 @@ const Booking = () => {
                       <SelectItem 
                         value="17:00" 
                         disabled 
-                        className={getAppointmentStatus("17:00") === "confirmed" ? "text-gray-500" : "text-orange-500"}
+                        className="text-gray-500 cursor-not-allowed"
                       >
-                        17:00 - {getAppointmentStatus("17:00") === "confirmed" ? t.confirmed : t.pending}
+                        17:00 - {t.booked}
                       </SelectItem>
                     )}
                     
@@ -446,9 +446,9 @@ const Booking = () => {
                       <SelectItem 
                         value="18:00" 
                         disabled 
-                        className={getAppointmentStatus("18:00") === "confirmed" ? "text-gray-500" : "text-orange-500"}
+                        className="text-gray-500 cursor-not-allowed"
                       >
-                        18:00 - {getAppointmentStatus("18:00") === "confirmed" ? t.confirmed : t.pending}
+                        18:00 - {t.booked}
                       </SelectItem>
                     )}
                     
@@ -459,9 +459,9 @@ const Booking = () => {
                       <SelectItem 
                         value="19:00" 
                         disabled 
-                        className={getAppointmentStatus("19:00") === "confirmed" ? "text-gray-500" : "text-orange-500"}
+                        className="text-gray-500 cursor-not-allowed"
                       >
-                        19:00 - {getAppointmentStatus("19:00") === "confirmed" ? t.confirmed : t.pending}
+                        19:00 - {t.booked}
                       </SelectItem>
                     )}
                     
@@ -472,9 +472,9 @@ const Booking = () => {
                       <SelectItem 
                         value="20:00" 
                         disabled 
-                        className={getAppointmentStatus("20:00") === "confirmed" ? "text-gray-500" : "text-orange-500"}
+                        className="text-gray-500 cursor-not-allowed"
                       >
-                        20:00 - {getAppointmentStatus("20:00") === "confirmed" ? t.confirmed : t.pending}
+                        20:00 - {t.booked}
                       </SelectItem>
                     )}
                   </SelectContent>
@@ -507,7 +507,7 @@ const Booking = () => {
                 className="bg-gradient-to-r from-mystical-500 to-accent-500 text-white px-8 py-3 hover:from-mystical-600 hover:to-accent-600 shadow-lg transform hover:scale-105 transition-all font-semibold disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
               >
                 {createAppointmentMutation.isPending ? (
-                  <LoadingSpinner size="sm" text={t.processing || "Processing..."} />
+                  <LoadingSpinner size="sm" text={t.processing || "Processing..."} horizontal />
                 ) : (
                   t.bookAppointment || "Book appointment"
                 )}

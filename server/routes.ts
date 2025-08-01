@@ -2,14 +2,18 @@ import express, { type Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { setupAuth, isAuthenticated, isAdmin } from "./auth";
+import passport from "passport";
 import { insertUserSchema, insertAppointmentSchema, insertReviewSchema } from "../shared/schema";
+import { generateToken, verifyToken, extractTokenFromRequest } from "../shared/jwt";
 import { z } from "zod";
 import Stripe from "stripe";
 import multer from "multer";
 import path from "path";
 import { fileURLToPath } from 'url';
 import fetch from 'node-fetch';
-import { sendAppointmentSubmittedEmail, sendAppointmentConfirmedEmail, sendCoursePurchasedEmail } from "./emailService";
+import { sendAppointmentSubmittedEmail, sendAppointmentConfirmedEmail, sendCoursePurchasedEmail, sendAdminAppointmentNotification } from "./emailService";
+import bcrypt from 'bcryptjs';
+import { Pool } from 'pg';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -29,6 +33,119 @@ const upload = multer({
 const SUPPORTED_LANGS = ["ua", "en", "ru"];
 const GOOGLE_TRANSLATE_API_KEY = process.env.GOOGLE_TRANSLATE_API_KEY || null;
 const YANDEX_TRANSLATE_API_KEY = process.env.YANDEX_TRANSLATE_API_KEY || null;
+
+// JWT Authentication Middleware
+const isAuthenticatedJWT = async (req: any, res: any, next: any) => {
+  try {
+    const token = extractTokenFromRequest(req);
+    
+    if (!token) {
+      return res.status(401).json({ message: "Authentication required" });
+    }
+
+    const payload = verifyToken(token);
+    if (!payload) {
+      return res.status(401).json({ message: "Invalid token" });
+    }
+
+    // Get fresh user data from database
+    const pool = new Pool({
+      connectionString: process.env.DATABASE_URL,
+      ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false
+    });
+
+    const client = await pool.connect();
+    
+    try {
+      const userResult = await client.query(
+        'SELECT id, email, first_name, last_name, profile_image_url, google_id, phone, is_admin FROM users WHERE id = $1',
+        [payload.userId]
+      );
+
+      if (userResult.rows.length === 0) {
+        return res.status(401).json({ message: "User not found" });
+      }
+
+      const user = userResult.rows[0];
+      req.user = {
+        id: user.id,
+        email: user.email,
+        firstName: user.first_name,
+        lastName: user.last_name,
+        profileImageUrl: user.profile_image_url,
+        googleId: user.google_id,
+        phone: user.phone,
+        isAdmin: user.is_admin
+      };
+
+      next();
+    } finally {
+      client.release();
+      await pool.end();
+    }
+  } catch (error) {
+    console.error('JWT authentication error:', error);
+    res.status(401).json({ message: "Authentication failed" });
+  }
+};
+
+const isAdminJWT = async (req: any, res: any, next: any) => {
+  try {
+    const token = extractTokenFromRequest(req);
+    
+    if (!token) {
+      return res.status(401).json({ message: "Authentication required" });
+    }
+
+    const payload = verifyToken(token);
+    if (!payload) {
+      return res.status(401).json({ message: "Invalid token" });
+    }
+
+    if (!payload.isAdmin) {
+      return res.status(403).json({ message: "Admin privileges required" });
+    }
+
+    // Get fresh user data from database
+    const pool = new Pool({
+      connectionString: process.env.DATABASE_URL,
+      ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false
+    });
+
+    const client = await pool.connect();
+    
+    try {
+      const userResult = await client.query(
+        'SELECT id, email, first_name, last_name, profile_image_url, google_id, phone, is_admin FROM users WHERE id = $1',
+        [payload.userId]
+      );
+
+      if (userResult.rows.length === 0) {
+        return res.status(401).json({ message: "User not found" });
+      }
+
+      const user = userResult.rows[0];
+      req.user = {
+        id: user.id,
+        email: user.email,
+        firstName: user.first_name,
+        lastName: user.last_name,
+        profileImageUrl: user.profile_image_url,
+        googleId: user.google_id,
+        phone: user.phone,
+        isAdmin: user.is_admin
+      };
+
+      next();
+    } finally {
+      client.release();
+      await pool.end();
+    }
+  } catch (error) {
+    console.error('JWT admin authentication error:', error);
+    res.status(401).json({ message: "Authentication failed" });
+  }
+};
 
 async function translateText(text: string, from: string, to: string): Promise<string> {
   if (!GOOGLE_TRANSLATE_API_KEY) return text;
@@ -78,6 +195,292 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Setup authentication
   setupAuth(app);
 
+  // Google OAuth routes
+  app.get("/api/auth/google", passport.authenticate("google", { scope: ["profile", "email"] }));
+  
+  app.get("/api/auth/google/callback", 
+    passport.authenticate("google", { failureRedirect: "/login" }),
+    async (req: any, res) => {
+      try {
+        // User is authenticated via Passport session
+        const user = req.user;
+        
+        if (!user) {
+          return res.redirect("/login?error=authentication_failed");
+        }
+
+        // Generate JWT token
+        const token = generateToken({
+          userId: user.id,
+          email: user.email,
+          firstName: user.firstName,
+          lastName: user.lastName,
+          isAdmin: user.isAdmin
+        });
+
+        // Redirect to frontend with token in URL fragment
+        const userData = {
+          id: user.id,
+          email: user.email,
+          firstName: user.firstName,
+          lastName: user.lastName,
+          profileImageUrl: user.profileImageUrl,
+          googleId: user.googleId,
+          phone: user.phone,
+          isAdmin: user.isAdmin
+        };
+
+        // Encode user data and token for URL
+        const encodedData = encodeURIComponent(JSON.stringify({
+          token,
+          user: userData
+        }));
+
+        // Redirect to frontend with authentication data
+        res.redirect(`/?auth=${encodedData}`);
+        
+      } catch (error) {
+        res.redirect("/login?error=authentication_failed");
+      }
+    }
+  );
+
+  // Universal JWT Login endpoint (works both locally and on Vercel)
+  app.post("/api/auth/login", async (req, res) => {
+    try {
+      const { email, password } = req.body;
+      
+      if (!email || !password) {
+        return res.status(400).json({ error: 'Email and password are required' });
+      }
+      
+      // Check environment variables
+      if (!process.env.DATABASE_URL) {
+        return res.status(500).json({ error: 'Database configuration missing' });
+      }
+
+      if (!process.env.JWT_SECRET) {
+        return res.status(500).json({ error: 'JWT configuration missing' });
+      }
+      
+      // Connect to database (same as Vercel)
+      const pool = new Pool({
+        connectionString: process.env.DATABASE_URL,
+        ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false
+      });
+
+      const client = await pool.connect();
+      
+      try {
+        // Find user by email (same query as Vercel)
+        const userResult = await client.query(
+          'SELECT id, email, first_name, last_name, password, is_admin FROM users WHERE email = $1',
+          [email]
+        );
+
+        if (userResult.rows.length === 0) {
+          return res.status(401).json({ error: 'Invalid email or password' });
+        }
+
+        const user = userResult.rows[0];
+
+                // Verify password using bcrypt (same as Vercel)
+        const isValidPassword = await bcrypt.compare(password, user.password);
+        
+        if (!isValidPassword) {
+          return res.status(401).json({ error: 'Invalid email or password' });
+        }
+        
+        // Generate JWT token (same as Vercel)
+        
+                const token = generateToken({
+          userId: user.id,
+          email: user.email,
+          firstName: user.first_name,
+          lastName: user.last_name,
+          isAdmin: user.is_admin
+        });
+
+        const responseData = {
+          token,
+          user: {
+            id: user.id,
+            email: user.email,
+            firstName: user.first_name,
+            lastName: user.last_name,
+            isAdmin: user.is_admin
+          }
+        };
+
+        res.status(200).json(responseData);
+
+      } finally {
+        client.release();
+        await pool.end();
+      }
+
+    } catch (error) {
+      console.error('❌ Login error:', error);
+      res.status(500).json({ 
+        error: 'Internal server error', 
+        details: error instanceof Error ? error.message : 'Unknown error'
+      });
+    }
+  });
+
+  // Universal JWT User info endpoint (works both locally and on Vercel)
+  app.get("/api/auth/user", async (req, res) => {
+    try {
+      // Extract token from request (same as Vercel)
+      const token = extractTokenFromRequest(req);
+      
+      if (!token) {
+        return res.status(401).json({ message: 'Not authenticated' });
+      }
+
+      // Verify token (same as Vercel)
+      const payload = verifyToken(token);
+      if (!payload) {
+        return res.status(401).json({ message: 'Invalid token' });
+      }
+
+      // Get fresh user data from database (same as Vercel)
+      const pool = new Pool({
+        connectionString: process.env.DATABASE_URL,
+        ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false
+      });
+
+      const client = await pool.connect();
+      
+      try {
+        const userResult = await client.query(
+          'SELECT id, email, first_name, last_name, profile_image_url, google_id, phone, is_admin FROM users WHERE id = $1',
+          [payload.userId]
+        );
+
+        if (userResult.rows.length === 0) {
+          return res.status(401).json({ message: 'User not found' });
+        }
+
+        const user = userResult.rows[0];
+        
+        const responseData = {
+          id: user.id,
+          email: user.email,
+          firstName: user.first_name,
+          lastName: user.last_name,
+          profileImageUrl: user.profile_image_url,
+          googleId: user.google_id,
+          phone: user.phone,
+          isAdmin: user.is_admin
+        };
+        
+        res.status(200).json(responseData);
+
+      } finally {
+        client.release();
+        await pool.end();
+      }
+
+    } catch (error) {
+      console.error('❌ User info error:', error);
+      res.status(500).json({ error: 'Internal server error' });
+    }
+  });
+
+  // Universal JWT Register endpoint (works both locally and on Vercel)
+  app.post("/api/auth/register", async (req, res) => {
+    try {
+      const { email, password, firstName, lastName } = req.body;
+      
+      if (!email || !password) {
+        return res.status(400).json({ error: 'Email and password are required' });
+      }
+      
+      // Check environment variables
+      if (!process.env.DATABASE_URL) {
+        console.error('❌ DATABASE_URL not found');
+        return res.status(500).json({ error: 'Database configuration missing' });
+      }
+
+      if (!process.env.JWT_SECRET) {
+        console.error('❌ JWT_SECRET not found');
+        return res.status(500).json({ error: 'JWT configuration missing' });
+      }
+
+
+      
+      // Connect to database (same as Vercel)
+      const pool = new Pool({
+        connectionString: process.env.DATABASE_URL,
+        ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false
+      });
+
+      const client = await pool.connect();
+      
+      try {
+        // Check if user already exists
+        const existingUserResult = await client.query(
+          'SELECT id FROM users WHERE email = $1',
+          [email]
+        );
+
+        if (existingUserResult.rows.length > 0) {
+          return res.status(400).json({ error: 'User already exists' });
+        }
+
+        // Hash password
+        const hashedPassword = await bcrypt.hash(password, 12);
+        
+        // Create user
+        const userResult = await client.query(
+          'INSERT INTO users (email, password, first_name, last_name, is_admin) VALUES ($1, $2, $3, $4, $5) RETURNING id, email, first_name, last_name, is_admin',
+          [email, hashedPassword, firstName || null, lastName || null, email === "antip4uck.ia@gmail.com"]
+        );
+
+        const user = userResult.rows[0];
+
+        // Generate JWT token
+        const token = generateToken({
+          userId: user.id,
+          email: user.email,
+          firstName: user.first_name,
+          lastName: user.last_name,
+          isAdmin: user.is_admin
+        });
+
+        const responseData = {
+          token,
+          user: {
+            id: user.id,
+            email: user.email,
+            firstName: user.first_name,
+            lastName: user.last_name,
+            isAdmin: user.is_admin
+          }
+        };
+
+        res.status(201).json(responseData);
+
+      } finally {
+        client.release();
+        await pool.end();
+      }
+
+    } catch (error) {
+      console.error('❌ Registration error:', error);
+      res.status(500).json({ 
+        error: 'Internal server error', 
+        details: error instanceof Error ? error.message : 'Unknown error'
+      });
+    }
+  });
+
+  // Universal JWT Logout endpoint (works both locally and on Vercel)
+  app.post("/api/auth/logout", (req, res) => {
+    res.status(200).json({ message: 'Logged out successfully' });
+  });
+
   // Health check endpoint
   app.get("/api/health", (req, res) => {
     res.json({ 
@@ -99,7 +502,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Get user appointments
-  app.get("/api/appointments/user", isAuthenticated, async (req: any, res) => {
+  app.get("/api/appointments/user", isAuthenticatedJWT, async (req: any, res) => {
     try {
       const userId = req.user.id;
       const appointments = await storage.getAppointmentsByUserId(userId);
@@ -111,7 +514,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Get all appointments (admin only)
-  app.get("/api/appointments", isAdmin, async (req, res) => {
+  app.get("/api/appointments", isAdminJWT, async (req, res) => {
     try {
       const appointments = await storage.getAllAppointments();
       res.json(appointments);
@@ -122,11 +525,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Get recent appointments (admin only)
-  app.get("/api/appointments/recent", isAdmin, async (req, res) => {
+  app.get("/api/appointments/recent", isAdminJWT, async (req, res) => {
     try {
       const limit = parseInt(req.query.limit as string) || 10;
       const appointments = await storage.getRecentAppointments(limit);
-      console.log("Sending recent appointments to client:", JSON.stringify(appointments, null, 2));
       res.json(appointments);
     } catch (error) {
       console.error("Error fetching recent appointments:", error);
@@ -135,7 +537,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Create appointment (for authenticated users)
-  app.post("/api/appointments", isAuthenticated, async (req: any, res) => {
+  app.post("/api/appointments", isAuthenticatedJWT, async (req: any, res) => {
     try {
       const { serviceId, appointmentDate, notes, status } = req.body;
       
@@ -147,8 +549,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
         notes: notes || null,
         status: status || "pending"
       };
-      
-      console.log("Creating appointment:", appointmentData);
       
       const appointment = await storage.createAppointment(appointmentData);
       
@@ -168,7 +568,29 @@ export async function registerRoutes(app: Express): Promise<Server> {
           userLanguage
         );
         
-        console.log("Appointment submission email sent successfully");
+
+        
+        // Send admin notification email
+        try {
+          const adminEmail = process.env.ADMIN_EMAIL || 'antip4uck.ia@gmail.com';
+          const clientName = `${req.user.firstName || ''} ${req.user.lastName || ''}`.trim() || 'Unknown Client';
+          const clientPhone = req.user.phone || 'No phone provided';
+          
+          await sendAdminAppointmentNotification(
+            adminEmail,
+            clientName,
+            req.user.email,
+            clientPhone,
+            serviceName,
+            new Date(appointmentDate),
+            userLanguage
+          );
+          
+
+        } catch (adminEmailError) {
+          console.error("Error sending admin notification email:", adminEmailError);
+          // Don't fail the appointment creation if admin email fails
+        }
       } catch (emailError) {
         console.error("Error sending appointment submission email:", emailError);
         // Don't fail the appointment creation if email fails
@@ -182,7 +604,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Create appointment for client without account (admin only)
-  app.post("/api/appointments/admin", isAdmin, async (req: any, res) => {
+  app.post("/api/appointments/admin", isAdminJWT, async (req: any, res) => {
     try {
       const { serviceId, appointmentDate, notes, status, clientInfo } = req.body;
       
@@ -194,9 +616,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (appointmentDate) {
         // If it's an ISO string, parse it as UTC to preserve the intended date
         parsedDate = new Date(appointmentDate);
-        console.log("Original appointmentDate:", appointmentDate);
-        console.log("Parsed date:", parsedDate);
-        console.log("Parsed date ISO:", parsedDate.toISOString());
+
         
         // Validate the parsed date
         if (isNaN(parsedDate.getTime())) {
@@ -219,7 +639,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
       };
       
-      console.log("Creating admin appointment:", appointmentData);
+
       
       const appointment = await storage.createAppointmentForClient(appointmentData);
       res.status(201).json(appointment);
@@ -230,7 +650,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Update appointment status (admin only)
-    app.put("/api/appointments/:id/status", isAdmin, async (req, res) => {
+    app.put("/api/appointments/:id/status", isAdminJWT, async (req, res) => {
     try {
       const appointmentId = parseInt(req.params.id);
       const { status } = req.body;
@@ -264,7 +684,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
               userLanguage
             );
             
-            console.log("Appointment confirmation email sent successfully");
+    
           }
         } catch (emailError) {
           console.error("Error sending appointment confirmation email:", emailError);
@@ -279,14 +699,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.delete("/api/appointments/:id", isAdmin, async (req, res) => {
+  app.delete("/api/appointments/:id", isAdminJWT, async (req, res) => {
     try {
       const appointmentId = parseInt(req.params.id);
-      console.log(`DELETE /api/appointments/${appointmentId} - Starting deletion`);
-      
       await storage.deleteAppointment(appointmentId);
-      
-      console.log(`DELETE /api/appointments/${appointmentId} - Deletion completed`);
       res.status(204).send();
     } catch (error) {
       console.error("Error deleting appointment:", error);
@@ -326,7 +742,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Users routes (admin only)
-  app.get("/api/users", isAdmin, async (req, res) => {
+  app.get("/api/users", isAdminJWT, async (req, res) => {
     try {
       const users = await storage.getAllUsers();
       const usersWithoutPasswords = users.map(user => ({ ...user, password: undefined }));
@@ -336,7 +752,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post("/api/users", isAdmin, async (req, res) => {
+  app.post("/api/users", isAdminJWT, async (req, res) => {
     try {
       const userData = insertUserSchema.parse(req.body);
       const user = await storage.createUser(userData);
@@ -351,7 +767,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Update user profile (authenticated user)
-  app.put("/api/users/profile", isAuthenticated, async (req: any, res) => {
+  app.put("/api/users/profile", isAuthenticatedJWT, async (req: any, res) => {
     try {
       const userId = req.user.id;
       const { firstName, lastName, phone, profileImageUrl } = req.body;
@@ -371,7 +787,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Update user admin status (admin only)
-  app.put("/api/users/:id/admin", isAdmin, async (req, res) => {
+  app.put("/api/users/:id/admin", isAdminJWT, async (req, res) => {
     try {
       const userId = parseInt(req.params.id);
       const { isAdmin } = req.body;
@@ -390,9 +806,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Services routes
   app.get("/api/services", async (req, res) => {
     try {
-      console.log("GET /api/services - Fetching all services");
-      const services = await storage.getAllServices();
-      console.log(`GET /api/services - Found ${services.length} services`);
+          const services = await storage.getAllServices();
       res.json(services);
     } catch (error) {
       console.error("Error fetching services:", error);
@@ -403,9 +817,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Appointments routes
   app.get("/api/appointments", async (req, res) => {
     try {
-      console.log("GET /api/appointments - Fetching all appointments");
-      const appointments = await storage.getAllAppointments();
-      console.log(`GET /api/appointments - Found ${appointments.length} appointments:`, appointments.map(a => ({ id: a.id, date: a.appointmentDate, status: a.status })));
+          const appointments = await storage.getAllAppointments();
       res.json(appointments);
     } catch (error) {
       console.error("Error fetching appointments:", error);
@@ -427,6 +839,35 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Get appointments by date for booking page
+  app.get("/api/appointments/by-date", async (req, res) => {
+    try {
+      const { date } = req.query;
+      
+      if (!date || typeof date !== 'string') {
+        return res.status(400).json({ error: "Date parameter is required" });
+      }
+
+      // Get all appointments and filter by date
+      const allAppointments = await storage.getAllAppointments();
+      
+      // Filter appointments for the specific date
+      const dateAppointments = allAppointments.filter((appointment: any) => {
+        const appointmentDate = new Date(appointment.appointmentDate);
+        const queryDate = new Date(date);
+        
+        // Compare only the date part (year, month, day)
+        return appointmentDate.getFullYear() === queryDate.getFullYear() &&
+               appointmentDate.getMonth() === queryDate.getMonth() &&
+               appointmentDate.getDate() === queryDate.getDate();
+      });
+      res.json(dateAppointments);
+    } catch (error) {
+      console.error("Error fetching appointments by date:", error);
+      res.status(500).json({ error: "Failed to fetch appointments by date" });
+    }
+  });
+
   // Reviews routes
   // Получить только одобренные отзывы
   app.get("/api/reviews", async (req, res) => {
@@ -439,7 +880,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Получить все отзывы (только для админа)
-  app.get("/api/reviews/all", isAdmin, async (req, res) => {
+  app.get("/api/reviews/all", isAdminJWT, async (req, res) => {
     try {
       const reviews = await storage.getAllReviews();
       res.json(reviews);
@@ -449,7 +890,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Одобрить отзыв (только для админа)
-  app.post("/api/reviews/:id/approve", isAdmin, async (req, res) => {
+  app.post("/api/reviews/:id/approve", isAdminJWT, async (req, res) => {
     try {
       const reviewId = parseInt(req.params.id);
       const review = await storage.approveReview(reviewId);
@@ -460,7 +901,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Отклонить отзыв (только для админа)
-  app.post("/api/reviews/:id/reject", isAdmin, async (req, res) => {
+  app.post("/api/reviews/:id/reject", isAdminJWT, async (req, res) => {
     try {
       const reviewId = parseInt(req.params.id);
       const review = await storage.rejectReview(reviewId);
@@ -471,7 +912,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Удалить отзыв (только для админа)
-  app.delete("/api/reviews/:id", isAdmin, async (req, res) => {
+  app.delete("/api/reviews/:id", isAdminJWT, async (req, res) => {
     try {
       const reviewId = parseInt(req.params.id);
       await storage.deleteReview(reviewId);
@@ -508,9 +949,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Courses routes
   app.get("/api/courses", async (req, res) => {
     try {
-      console.log("GET /api/courses - Fetching all courses");
-      const courses = await storage.getAllCourses();
-      console.log(`GET /api/courses - Found ${courses.length} courses`);
+          const courses = await storage.getAllCourses();
       res.json(courses);
     } catch (error) {
       console.error("Error fetching courses:", error);
@@ -531,7 +970,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Обновить курс (только для админа)
-  app.put("/api/courses/:id", isAdmin, async (req, res) => {
+  app.put("/api/courses/:id", isAdminJWT, async (req, res) => {
     try {
       const id = Number(req.params.id);
       const { price, duration, name, description } = req.body;
@@ -546,7 +985,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Обновить услугу (только для админа)
-  app.put("/api/services/:id", isAdmin, async (req, res) => {
+  app.put("/api/services/:id", isAdminJWT, async (req, res) => {
     try {
       const id = Number(req.params.id);
       const { price, duration, name, description } = req.body;
@@ -561,12 +1000,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Добавить услугу (только для админа)
-  app.post("/api/services", isAdmin, async (req, res) => {
+  app.post("/api/services", isAdminJWT, async (req, res) => {
     try {
-      console.log("POST /api/services - Creating new service:", req.body);
       let { name, price, duration, description, category } = req.body;
       if (!name || !price || !duration) {
-        console.log("POST /api/services - Missing required fields");
         return res.status(400).json({ error: "Missing required fields" });
       }
       // name и description могут быть строкой (старый фронт) или объектом
@@ -575,7 +1012,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
       name = await ensureAllLangs(name, Object.keys(name)[0]);
       description = await ensureAllLangs(description, Object.keys(description)[0]);
       const created = await storage.createService({ name, price, duration, description, category: category || "custom" });
-      console.log("POST /api/services - Service created successfully:", created.id);
       res.status(201).json(created);
     } catch (error: any) {
       console.error("CREATE SERVICE ERROR", error);
@@ -584,7 +1020,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Удалить услугу (только для админа)
-  app.delete("/api/services/:id", isAdmin, async (req, res) => {
+  app.delete("/api/services/:id", isAdminJWT, async (req, res) => {
     try {
       const id = Number(req.params.id);
       await storage.deleteService(id);
@@ -599,12 +1035,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Добавить курс (только для админа)
-  app.post("/api/courses", isAdmin, async (req, res) => {
+  app.post("/api/courses", isAdminJWT, async (req, res) => {
     try {
-      console.log("POST /api/courses - Creating new course:", req.body);
       let { name, price, duration, description, category } = req.body;
       if (!name || !price || !duration) {
-        console.log("POST /api/courses - Missing required fields");
         return res.status(400).json({ error: "Missing required fields" });
       }
       if (typeof name === "string") name = { ua: name };
@@ -612,7 +1046,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
       name = await ensureAllLangs(name, Object.keys(name)[0]);
       description = await ensureAllLangs(description, Object.keys(description)[0]);
       const created = await storage.createCourse({ name, price, duration, description, category: category || "custom" });
-      console.log("POST /api/courses - Course created successfully:", created.id);
       res.status(201).json(created);
     } catch (error: any) {
       console.error("CREATE COURSE ERROR", error);
@@ -621,7 +1054,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Удалить курс (только для админа)
-  app.delete("/api/courses/:id", isAdmin, async (req, res) => {
+  app.delete("/api/courses/:id", isAdminJWT, async (req, res) => {
     try {
       const id = Number(req.params.id);
       await storage.deleteCourse(id);
@@ -718,7 +1151,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
                 userLanguage
               );
               
-              console.log("Course purchase email sent successfully");
+      
             }
           }
         } catch (emailError) {
@@ -728,14 +1161,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
         break;
         
       default:
-        console.log(`Unhandled event type ${event.type}`);
+
     }
 
     res.json({ received: true });
   });
 
   // Эндпоинт для загрузки файлов (картинок)
-  app.post("/api/upload", isAdmin, upload.single("file"), (req: any, res) => {
+  app.post("/api/upload", isAdminJWT, upload.single("file"), (req: any, res) => {
     if (!req.file) {
       return res.status(400).json({ error: "No file uploaded" });
     }
@@ -745,7 +1178,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Test endpoint for email functionality (admin only)
-  app.post("/api/test-email", isAdmin, async (req, res) => {
+  app.post("/api/test-email", isAdminJWT, async (req, res) => {
     try {
       const { email, type, language = 'ua' } = req.body;
       
@@ -782,6 +1215,32 @@ export async function registerRoutes(app: Express): Promise<Server> {
         default:
           return res.status(400).json({ error: "Invalid email type" });
       }
+
+      res.json({ success: true, message: "Test email sent successfully" });
+    } catch (error: any) {
+      console.error("Error sending test email:", error);
+      res.status(500).json({ error: "Failed to send test email", details: error.message });
+    }
+  });
+
+  // Simple test endpoint for email (no auth required for quick testing)
+  app.post("/api/test-email-simple", async (req, res) => {
+    try {
+      const { email } = req.body;
+      
+      if (!email) {
+        return res.status(400).json({ error: "Email is required" });
+      }
+
+      // Import email service functions
+      const { sendAppointmentSubmittedEmail } = await import("./emailService.js");
+      
+      await sendAppointmentSubmittedEmail(
+        email,
+        'Test Service',
+        new Date(),
+        'ua'
+      );
 
       res.json({ success: true, message: "Test email sent successfully" });
     } catch (error: any) {

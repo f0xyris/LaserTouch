@@ -90,7 +90,7 @@ export function setupAuth(app: Express) {
 
   // Google Strategy
   if (process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET) {
-    console.log("Initializing Google OAuth strategy");
+  
     passport.use(
       new GoogleStrategy(
         {
@@ -101,7 +101,7 @@ export function setupAuth(app: Express) {
         },
         async (accessToken, refreshToken, profile, done) => {
           try {
-            console.log("Google OAuth profile:", profile);
+    
             
             // Check if user exists with Google ID
             let user = await storage.getUserByGoogleId(profile.id);
@@ -132,7 +132,7 @@ export function setupAuth(app: Express) {
               });
             }
 
-            console.log("Google OAuth user created/found:", user);
+    
             return done(null, { ...user, isAdmin: user.isAdmin ?? false });
           } catch (error) {
             console.error("Google OAuth error:", error);
@@ -153,96 +153,10 @@ export function setupAuth(app: Express) {
     }
   });
 
-  // Register route
-  app.post("/api/auth/register", async (req, res, next) => {
-    try {
-      const { email, password, firstName, lastName } = req.body;
-      
-      if (!email || !password) {
-        return res.status(400).json({ message: "Email and password are required" });
-      }
+  // Note: Registration route is now handled by JWT endpoints in server/routes.ts
 
-      const existingUser = await storage.getUserByEmail(email);
-      if (existingUser) {
-        return res.status(400).json({ message: "User already exists" });
-      }
-
-      const hashedPassword = await hashPassword(password);
-      const user = await storage.createUser({
-        email,
-        password: hashedPassword,
-        firstName: firstName || null,
-        lastName: lastName || null,
-        googleId: null,
-        profileImageUrl: null,
-        isAdmin: email === "antip4uck.ia@gmail.com", // Make this email admin by default
-      });
-
-      req.login({ ...user, isAdmin: user.isAdmin ?? false }, (err) => {
-        if (err) return next(err);
-        res.status(201).json({ user: { ...user, password: undefined } });
-      });
-    } catch (error) {
-      console.error("Registration error:", error);
-      res.status(500).json({ message: "Registration failed" });
-    }
-  });
-
-  // Login route
-  app.post("/api/auth/login", passport.authenticate("local"), (req, res) => {
-    res.json({ user: { ...req.user, password: undefined } });
-  });
-
-  // Google OAuth routes
-  app.get("/api/auth/google", (req, res, next) => {
-    console.log("Google OAuth initiated");
-    console.log("Google Client ID:", process.env.GOOGLE_CLIENT_ID);
-    console.log("Callback URL:", `${process.env.BASE_URL}/api/auth/google/callback`);
-    
-    // Check if Google OAuth is properly configured
-    if (!process.env.GOOGLE_CLIENT_ID || !process.env.GOOGLE_CLIENT_SECRET) {
-      console.error("Google OAuth not configured");
-      return res.status(500).json({ error: "Google OAuth not configured" });
-    }
-    
-    try {
-      passport.authenticate("google", { 
-        scope: ["profile", "email"],
-        accessType: "offline",
-        prompt: "consent"
-      })(req, res, next);
-    } catch (error) {
-      console.error("Google OAuth error:", error);
-      res.status(500).json({ error: "Google OAuth failed" });
-    }
-  });
-  
-  app.get("/api/auth/google/callback", 
-    (req, res, next) => {
-      console.log("Google OAuth callback received");
-      passport.authenticate("google", { 
-        failureRedirect: "/login?error=oauth_failed",
-        successRedirect: "/",
-        failureMessage: true
-      })(req, res, next);
-    }
-  );
-
-  // Logout route
-  app.post("/api/auth/logout", (req, res, next) => {
-    req.logout((err) => {
-      if (err) return next(err);
-      res.json({ message: "Logged out successfully" });
-    });
-  });
-
-  // Current user route
-  app.get("/api/auth/user", (req, res) => {
-    if (!req.isAuthenticated()) {
-      return res.status(401).json({ message: "Not authenticated" });
-    }
-    res.json({ ...req.user, password: undefined });
-  });
+  // Note: Login, logout, and user routes are now handled by JWT endpoints in server/routes.ts
+  // This setupAuth function only configures Passport.js for compatibility
 }
 
 export const isAuthenticated = (req: any, res: any, next: any) => {
