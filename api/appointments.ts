@@ -46,6 +46,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   try {
     console.log('Appointments endpoint called with method:', req.method);
     console.log('Request headers:', req.headers);
+    console.log('Request body:', req.body);
     
     // Verify token
     const token = extractTokenFromRequest(req);
@@ -214,9 +215,30 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         // Create new appointment
         const { userId, serviceId, appointmentDate, appointmentTime, notes } = req.body;
         
+        console.log('POST appointment data:', { userId, serviceId, appointmentDate, appointmentTime, notes });
+        
+        // Validate required fields
+        if (!serviceId || !appointmentDate) {
+          console.log('Missing required fields:', { serviceId, appointmentDate });
+          return res.status(400).json({ error: 'Missing required fields: serviceId and appointmentDate' });
+        }
+        
         // If admin is creating appointment for another user, use that userId
         // Otherwise, use the current user's ID
         const targetUserId = (payload.isAdmin && userId) ? userId : payload.userId;
+        
+        // Ensure appointmentDate is in correct format
+        let formattedDate = appointmentDate;
+        if (typeof appointmentDate === 'string') {
+          // If it's already a timestamp string, use it as is
+          formattedDate = appointmentDate;
+        } else {
+          // If it's a Date object or other format, convert to ISO string
+          formattedDate = new Date(appointmentDate).toISOString();
+        }
+        
+        console.log('Formatted date:', formattedDate);
+        console.log('Target user ID:', targetUserId);
         
                          const result = await client.query(`
           INSERT INTO appointments (user_id, service_id, appointment_date, status, notes, created_at, updated_at)
@@ -225,11 +247,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         `, [
           targetUserId.toString(),
           serviceId,
-          appointmentDate,
+          formattedDate,
           'pending',
           notes || ''
         ]);
         
+        console.log('Appointment created successfully with ID:', result.rows[0].id);
         res.status(201).json({ id: result.rows[0].id });
       } else if (req.method === 'PUT') {
         // Update appointment
