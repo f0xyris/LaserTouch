@@ -3,9 +3,10 @@ import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { Pool } from 'pg';
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
-  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Origin', 'https://laser-touch.vercel.app');
   res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+  res.setHeader('Access-Control-Allow-Credentials', 'true');
   
   if (req.method === 'OPTIONS') {
     return res.status(200).end();
@@ -16,7 +17,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   }
 
   try {
-  
+    console.log('Courses endpoint called');
+    
+    if (!process.env.DATABASE_URL) {
+      console.error('❌ DATABASE_URL not found');
+      return res.status(500).json({ error: 'Database configuration missing' });
+    }
     
     const pool = new Pool({
       connectionString: process.env.DATABASE_URL,
@@ -24,8 +30,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     });
     
     const client = await pool.connect();
+    console.log('Database connected successfully');
     
     try {
+      console.log('Executing courses query...');
       const coursesResult = await client.query(`
         SELECT 
           id, 
@@ -45,6 +53,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         WHERE is_active = true 
         ORDER BY created_at DESC
       `);
+      
+      console.log('Courses query result:', coursesResult.rows.length, 'courses found');
       
   
       

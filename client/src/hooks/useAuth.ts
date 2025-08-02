@@ -28,8 +28,18 @@ export function useAuth() {
   // Check for auth data in URL (from Google OAuth)
   useEffect(() => {
     const urlParams = new URLSearchParams(window.location.search);
+    const token = urlParams.get('token');
     const authData = urlParams.get('auth');
-    if (authData) {
+    
+    if (token) {
+      // Google OAuth callback with token in URL
+      setStoredToken(token);
+      // Remove token from URL
+      window.history.replaceState({}, document.title, window.location.pathname);
+      // Refresh user data
+      queryClient.invalidateQueries({ queryKey: ["/api/auth/user"] });
+    } else if (authData) {
+      // Other OAuth with auth data
       try {
         const decodedData = JSON.parse(decodeURIComponent(authData));
         if (decodedData.token) {

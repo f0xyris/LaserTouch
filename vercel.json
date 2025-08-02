@@ -19,6 +19,10 @@
       "dest": "/api/env-check.ts"
     },
     {
+      "src": "/api/health-check",
+      "dest": "/api/health-check.ts"
+    },
+    {
       "src": "/api/test-login",
       "dest": "/api/test-login.ts"
     },
