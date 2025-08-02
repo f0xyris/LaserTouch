@@ -224,55 +224,47 @@ export const TransitionLoader = ({ isVisible }: { isVisible: boolean }) => {
 export const LaserBodyPreloader: React.FC<{ className?: string }> = ({ className }) => {
   return (
     <div className={cn("fixed inset-0 bg-white dark:bg-deep-900 flex items-center justify-center z-50", className)}>
-      <div className="relative w-64 h-96">
-        {/* Body contour */}
-        <svg className="w-full h-full" viewBox="0 0 256 384" fill="none">
+      <div className="relative w-80 h-96">
+        {/* Elegant female body silhouette */}
+        <svg className="w-full h-full" viewBox="0 0 320 384" fill="none">
           <defs>
-            <linearGradient id="laserGradient" x1="0%" y1="0%" x2="100%" y2="0%">
-              <stop offset="0%" stopColor="#8B5CF6" stopOpacity="0.3" />
+            <linearGradient id="laserBeam" x1="0%" y1="0%" x2="100%" y2="0%">
+              <stop offset="0%" stopColor="#8B5CF6" stopOpacity="0" />
+              <stop offset="20%" stopColor="#EC4899" stopOpacity="0.8" />
               <stop offset="50%" stopColor="#EC4899" stopOpacity="1" />
-              <stop offset="100%" stopColor="#8B5CF6" stopOpacity="0.3" />
+              <stop offset="80%" stopColor="#EC4899" stopOpacity="0.8" />
+              <stop offset="100%" stopColor="#8B5CF6" stopOpacity="0" />
             </linearGradient>
             <mask id="bodyMask">
               <path
-                d="M128 20 C 80 20, 60 40, 60 80 C 60 120, 80 140, 128 140 C 176 140, 196 120, 196 80 C 196 40, 176 20, 128 20 Z M 80 140 L 80 200 C 80 220, 100 240, 128 240 C 156 240, 176 220, 176 200 L 176 140 M 128 240 L 128 320 C 128 340, 108 360, 88 360 C 68 360, 48 340, 48 320 L 48 280 M 128 240 L 128 320 C 128 340, 148 360, 168 360 C 188 360, 208 340, 208 320 L 208 280"
+                d="M160 30 C 120 30, 100 50, 100 90 C 100 130, 120 150, 160 150 C 200 150, 220 130, 220 90 C 220 50, 200 30, 160 30 Z M 120 150 L 120 210 C 120 230, 140 250, 160 250 C 180 250, 200 230, 200 210 L 200 150 M 160 250 L 160 330 C 160 350, 140 370, 120 370 C 100 370, 80 350, 80 330 L 80 290 M 160 250 L 160 330 C 160 350, 180 370, 200 370 C 220 370, 240 350, 240 330 L 240 290"
                 fill="white"
                 stroke="white"
-                strokeWidth="2"
+                strokeWidth="3"
               />
             </mask>
           </defs>
           
-          {/* Body outline */}
+          {/* Body outline - elegant thin lines */}
           <path
-            d="M128 20 C 80 20, 60 40, 60 80 C 60 120, 80 140, 128 140 C 176 140, 196 120, 196 80 C 196 40, 176 20, 128 20 Z M 80 140 L 80 200 C 80 220, 100 240, 128 240 C 156 240, 176 220, 176 200 L 176 140 M 128 240 L 128 320 C 128 340, 108 360, 88 360 C 68 360, 48 340, 48 320 L 48 280 M 128 240 L 128 320 C 128 340, 148 360, 168 360 C 188 360, 208 340, 208 320 L 208 280"
+            d="M160 30 C 120 30, 100 50, 100 90 C 100 130, 120 150, 160 150 C 200 150, 220 130, 220 90 C 220 50, 200 30, 160 30 Z M 120 150 L 120 210 C 120 230, 140 250, 160 250 C 180 250, 200 230, 200 210 L 200 150 M 160 250 L 160 330 C 160 350, 140 370, 120 370 C 100 370, 80 350, 80 330 L 80 290 M 160 250 L 160 330 C 160 350, 180 370, 200 370 C 220 370, 240 350, 240 330 L 240 290"
             stroke="#E5E7EB"
-            strokeWidth="3"
+            strokeWidth="2"
             fill="none"
             className="dark:stroke-gray-600"
           />
           
-          {/* Animated laser light */}
+          {/* Animated laser beam tracing the silhouette */}
           <rect
             x="0"
             y="0"
-            width="256"
+            width="320"
             height="384"
-            fill="url(#laserGradient)"
+            fill="url(#laserBeam)"
             mask="url(#bodyMask)"
             className="laser-scan-animation"
           />
         </svg>
-        
-        {/* Loading text */}
-        <div className="absolute bottom-0 left-1/2 transform -translate-x-1/2 text-center">
-          <h2 className="text-2xl font-bold text-mystical-700 dark:text-mystical-300 mb-2">
-            LaserTouch
-          </h2>
-          <p className="text-mystical-600 dark:text-mystical-400 text-sm">
-            Initializing your beauty experience...
-          </p>
-        </div>
       </div>
     </div>
   );

@@ -721,10 +721,10 @@ input, textarea {
     transform: translateX(-100%);
     opacity: 0;
   }
-  20% {
+  15% {
     opacity: 1;
   }
-  80% {
+  85% {
     opacity: 1;
   }
   100% {
@@ -734,16 +734,17 @@ input, textarea {
 }
 
 .laser-scan-animation {
-  animation: laserScan 3s ease-in-out infinite;
+  animation: laserScan 4s ease-in-out infinite;
+  filter: drop-shadow(0 0 8px rgba(236, 72, 153, 0.6));
 }
 
 /* Preloader fade transitions */
 .preloader-fade-in {
-  animation: fadeIn 0.5s ease-in-out;
+  animation: fadeIn 0.8s ease-in-out;
 }
 
 .preloader-fade-out {
-  animation: fadeOut 0.5s ease-in-out;
+  animation: fadeOut 0.8s ease-in-out;
 }
 
 @keyframes fadeIn {
