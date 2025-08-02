@@ -36,42 +36,54 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     try {
       if (req.method === 'GET') {
         console.log('Executing services query...');
-        const servicesResult = await client.query(`
-          SELECT 
-            id, 
-            name_ua, 
-            name_en, 
-            name_ru,
-            description_ua, 
-            description_en, 
-            description_ru,
-            price, 
-            duration, 
-            is_active,
-            created_at,
-            updated_at
-          FROM services 
-          WHERE is_active = true 
-          ORDER BY created_at DESC
+        // First, let's check the table structure
+        console.log('Checking services table structure...');
+        const structureResult = await client.query(`
+          SELECT column_name, data_type 
+          FROM information_schema.columns 
+          WHERE table_name = 'services' 
+          ORDER BY ordinal_position
         `);
         
+        console.log('Services table columns:', structureResult.rows.map(row => `${row.column_name} (${row.data_type})`));
+        
+        // Based on the structure, let's build the proper query
+        let query = 'SELECT ';
+        const columns = structureResult.rows.map(row => row.column_name);
+        
+        if (columns.includes('id')) query += 'id, ';
+        if (columns.includes('name')) query += 'name, ';
+        if (columns.includes('description')) query += 'description, ';
+        if (columns.includes('price')) query += 'price, ';
+        if (columns.includes('duration')) query += 'duration, ';
+        if (columns.includes('is_active')) query += 'is_active, ';
+        if (columns.includes('created_at')) query += 'created_at, ';
+        if (columns.includes('updated_at')) query += 'updated_at, ';
+        
+        // Remove trailing comma and space
+        query = query.slice(0, -2);
+        query += ' FROM services';
+        
+        if (columns.includes('is_active')) {
+          query += ' WHERE is_active = true';
+        }
+        
+        if (columns.includes('created_at')) {
+          query += ' ORDER BY created_at DESC';
+        }
+        
+        console.log('Final services query:', query);
+        
+        const servicesResult = await client.query(query);
         console.log('Services query result:', servicesResult.rows.length, 'services found');
         
         const services = servicesResult.rows.map(service => ({
           id: service.id,
-          name: {
-            ua: service.name_ua,
-            en: service.name_en,
-            ru: service.name_ru
-          },
-          description: {
-            ua: service.description_ua,
-            en: service.description_en,
-            ru: service.description_ru
-          },
-          price: service.price,
-          duration: service.duration,
-          isActive: service.is_active,
+          name: service.name || 'Untitled Service',
+          description: service.description || '',
+          price: service.price || 0,
+          duration: service.duration || 60,
+          isActive: service.is_active !== false,
           createdAt: service.created_at,
           updatedAt: service.updated_at
         }));

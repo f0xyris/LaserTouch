@@ -74,6 +74,36 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       if (req.method === 'GET') {
         console.log('Executing appointments query...');
         
+        // First, let's check the table structures
+        console.log('Checking appointments table structure...');
+        const appointmentsStructure = await client.query(`
+          SELECT column_name, data_type 
+          FROM information_schema.columns 
+          WHERE table_name = 'appointments' 
+          ORDER BY ordinal_position
+        `);
+        
+        console.log('Appointments table columns:', appointmentsStructure.rows.map(row => `${row.column_name} (${row.data_type})`));
+        
+        // Check if services table exists and has name column
+        let servicesNameColumn = 'name';
+        try {
+          const servicesStructure = await client.query(`
+            SELECT column_name, data_type 
+            FROM information_schema.columns 
+            WHERE table_name = 'services' 
+            ORDER BY ordinal_position
+          `);
+          
+          if (servicesStructure.rows.some(row => row.column_name === 'name')) {
+            servicesNameColumn = 'name';
+          } else if (servicesStructure.rows.some(row => row.column_name === 'name_ua')) {
+            servicesNameColumn = 'name_ua';
+          }
+        } catch (error) {
+          console.log('Services table not found, skipping service name');
+        }
+        
         let query = `
           SELECT 
             a.id, 
@@ -87,14 +117,23 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
             a.updated_at,
             u.first_name as user_first_name,
             u.last_name as user_last_name,
-            u.email as user_email,
-            s.name_ua as service_name_ua,
-            s.name_en as service_name_en,
-            s.name_ru as service_name_ru
+            u.email as user_email
+        `;
+        
+        // Add service name if services table exists
+        if (servicesNameColumn) {
+          query += `, s.${servicesNameColumn} as service_name`;
+        }
+        
+        query += `
           FROM appointments a
           LEFT JOIN users u ON a.user_id = u.id
-          LEFT JOIN services s ON a.service_id = s.id
         `;
+        
+        // Add services join if table exists
+        if (servicesNameColumn) {
+          query += ` LEFT JOIN services s ON a.service_id = s.id`;
+        }
         
         const queryParams = [];
         
@@ -126,11 +165,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
             email: appointment.user_email
           },
           service: {
-            name: {
-              ua: appointment.service_name_ua,
-              en: appointment.service_name_en,
-              ru: appointment.service_name_ru
-            }
+            name: appointment.service_name || 'Unknown Service'
           }
         }));
         

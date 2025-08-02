@@ -33,47 +33,66 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     console.log('Database connected successfully');
     
     try {
-      console.log('Executing courses query...');
-      const coursesResult = await client.query(`
-        SELECT 
-          id, 
-          title_ua, 
-          title_en, 
-          title_ru,
-          description_ua, 
-          description_en, 
-          description_ru,
-          price, 
-          duration, 
-          image_url, 
-          is_active,
-          created_at,
-          updated_at
-        FROM courses 
-        WHERE is_active = true 
-        ORDER BY created_at DESC
+      // First, let's check the table structure
+      console.log('Checking courses table structure...');
+      const structureResult = await client.query(`
+        SELECT column_name, data_type 
+        FROM information_schema.columns 
+        WHERE table_name = 'courses' 
+        ORDER BY ordinal_position
       `);
       
-      console.log('Courses query result:', coursesResult.rows.length, 'courses found');
+      console.log('Courses table columns:', structureResult.rows.map(row => `${row.column_name} (${row.data_type})`));
       
-  
+      // Now let's try a simple query to see what columns exist
+      console.log('Executing simple courses query...');
+      const coursesResult = await client.query(`
+        SELECT * FROM courses LIMIT 1
+      `);
       
-      const courses = coursesResult.rows.map(course => ({
+      if (coursesResult.rows.length > 0) {
+        console.log('Sample course row:', coursesResult.rows[0]);
+      }
+      
+      // Based on the structure, let's build the proper query
+      let query = 'SELECT ';
+      const columns = structureResult.rows.map(row => row.column_name);
+      
+      if (columns.includes('id')) query += 'id, ';
+      if (columns.includes('title')) query += 'title, ';
+      if (columns.includes('description')) query += 'description, ';
+      if (columns.includes('price')) query += 'price, ';
+      if (columns.includes('duration')) query += 'duration, ';
+      if (columns.includes('image_url')) query += 'image_url, ';
+      if (columns.includes('is_active')) query += 'is_active, ';
+      if (columns.includes('created_at')) query += 'created_at, ';
+      if (columns.includes('updated_at')) query += 'updated_at, ';
+      
+      // Remove trailing comma and space
+      query = query.slice(0, -2);
+      query += ' FROM courses';
+      
+      if (columns.includes('is_active')) {
+        query += ' WHERE is_active = true';
+      }
+      
+      if (columns.includes('created_at')) {
+        query += ' ORDER BY created_at DESC';
+      }
+      
+      console.log('Final query:', query);
+      
+      const finalResult = await client.query(query);
+      console.log('Courses query result:', finalResult.rows.length, 'courses found');
+      
+      const courses = finalResult.rows.map(course => ({
         id: course.id,
-        title: {
-          ua: course.title_ua,
-          en: course.title_en,
-          ru: course.title_ru
-        },
-        description: {
-          ua: course.description_ua,
-          en: course.description_en,
-          ru: course.description_ru
-        },
-        price: course.price,
-        duration: course.duration,
-        imageUrl: course.image_url,
-        isActive: course.is_active,
+        title: course.title || 'Untitled Course',
+        description: course.description || '',
+        price: course.price || 0,
+        duration: course.duration || 60,
+        imageUrl: course.image_url || null,
+        isActive: course.is_active !== false,
         createdAt: course.created_at,
         updatedAt: course.updated_at
       }));
