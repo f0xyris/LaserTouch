@@ -23,6 +23,10 @@
       "dest": "/api/test-login.ts"
     },
     {
+      "src": "/api/debug-login",
+      "dest": "/api/debug-login.ts"
+    },
+    {
       "src": "/api/admin-check",
       "dest": "/api/admin-check.ts"
     },
