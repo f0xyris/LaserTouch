@@ -45,15 +45,22 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
   try {
     console.log('Reviews endpoint called');
+    console.log('Request headers:', req.headers);
     
     // Verify admin token
     const token = extractTokenFromRequest(req);
+    console.log('Token extracted:', token ? 'Yes' : 'No');
+    
     if (!token) {
+      console.log('No token provided');
       return res.status(401).json({ error: 'No token provided' });
     }
     
     const payload = verifyToken(token);
+    console.log('Token payload:', payload);
+    
     if (!payload || !payload.isAdmin) {
+      console.log('Admin access required, payload:', payload);
       return res.status(403).json({ error: 'Admin access required' });
     }
     
@@ -70,7 +77,28 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const client = await pool.connect();
     console.log('Database connected successfully');
     
-    try {
+      // First, let's check if reviews table exists
+      console.log('Checking if reviews table exists...');
+      try {
+        const reviewsStructure = await client.query(`
+          SELECT column_name, data_type 
+          FROM information_schema.columns 
+          WHERE table_name = 'reviews' 
+          ORDER BY ordinal_position
+        `);
+        
+        console.log('Reviews table columns:', reviewsStructure.rows.map(row => `${row.column_name} (${row.data_type})`));
+        
+        if (reviewsStructure.rows.length === 0) {
+          console.log('Reviews table does not exist, returning empty array');
+          return res.status(200).json([]);
+        }
+      } catch (error) {
+        console.log('Error checking reviews table structure:', error.message);
+        console.log('Reviews table does not exist, returning empty array');
+        return res.status(200).json([]);
+      }
+      
       console.log('Executing reviews query...');
       const reviewsResult = await client.query(`
         SELECT 

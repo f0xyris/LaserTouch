@@ -45,15 +45,22 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
   try {
     console.log('Appointments endpoint called with method:', req.method);
+    console.log('Request headers:', req.headers);
     
     // Verify token
     const token = extractTokenFromRequest(req);
+    console.log('Token extracted:', token ? 'Yes' : 'No');
+    
     if (!token) {
+      console.log('No token provided');
       return res.status(401).json({ error: 'No token provided' });
     }
     
     const payload = verifyToken(token);
+    console.log('Token payload:', payload);
+    
     if (!payload) {
+      console.log('Invalid token');
       return res.status(401).json({ error: 'Invalid token' });
     }
     
