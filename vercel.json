@@ -35,6 +35,14 @@
       "dest": "/api/appointments/by-date.ts"
     },
     {
+      "src": "/api/appointments/(.*)",
+      "dest": "/api/appointments.ts"
+    },
+    {
+      "src": "/api/test-db",
+      "dest": "/api/test-db.ts"
+    },
+    {
       "src": "/api/admin-check",
       "dest": "/api/admin-check.ts"
     },

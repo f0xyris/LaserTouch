@@ -29,17 +29,38 @@ function extractTokenFromRequest(req: any): string | null {
 }
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
-  // Enable CORS
-  res.setHeader('Access-Control-Allow-Origin', 'https://laser-touch.vercel.app');
+  // PRODUCTION DEBUGGING: Comprehensive logging for troubleshooting Vercel deployment issues
+  console.log('=== APPOINTMENTS API CALLED ===');
+  console.log('Method:', req.method);
+  console.log('URL:', req.url);
+  console.log('Headers:', req.headers);
+  console.log('Query:', req.query);
+  console.log('Body:', req.body);
+
+  // CORS FIX: Expanded allowed origins to include Vercel preview deployments and local development
+  const allowedOrigins = [
+    'https://laser-touch.vercel.app',
+    'https://laser-touch-git-main-yaroslav-kravets-projects.vercel.app',
+    'http://localhost:5173',
+    'http://localhost:3000'
+  ];
+  
+  const origin = req.headers.origin;
+  if (origin && allowedOrigins.includes(origin)) {
+    res.setHeader('Access-Control-Allow-Origin', origin);
+  }
+  
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
   res.setHeader('Access-Control-Allow-Credentials', 'true');
   
   if (req.method === 'OPTIONS') {
+    console.log('OPTIONS request - returning 200');
     return res.status(200).end();
   }
   
   if (!['GET', 'POST', 'PUT', 'DELETE'].includes(req.method)) {
+    console.log('Method not allowed:', req.method);
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
@@ -47,6 +68,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     console.log('Appointments endpoint called with method:', req.method);
     console.log('Request headers:', req.headers);
     console.log('Request body:', req.body);
+    console.log('Request query:', req.query);
+    console.log('Request URL:', req.url);
     
     // Verify token
     const token = extractTokenFromRequest(req);
@@ -218,6 +241,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
             }
          }));
         
+        console.log('GET appointments successful, returning', appointments.length, 'appointments');
         res.status(200).json(appointments);
       } else if (req.method === 'POST') {
         // Create new appointment
@@ -260,11 +284,20 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           notes || ''
         ]);
         
-        console.log('Appointment created successfully with ID:', result.rows[0].id);
+        console.log('POST appointment successful, created ID:', result.rows[0].id);
         res.status(201).json({ id: result.rows[0].id });
-      } else if (req.method === 'PUT') {
-        // Update appointment
-        const { id, status, notes } = req.body;
+                 } else if (req.method === 'PUT') {
+             // CRITICAL FIX: Handle appointment updates from both URL parameters and request body
+             // This fixes the issue where frontend sends PUT requests to /api/appointments?id=123
+             const { id, status, notes } = req.body;
+
+             // Check if this is a status update request (from URL parameter)
+             const urlId = req.query.id;
+             const appointmentId = urlId || id;
+
+             if (!appointmentId) {
+               return res.status(400).json({ error: 'Appointment ID is required' });
+             }
         
         let query = 'UPDATE appointments SET';
         const queryParams = [];
@@ -290,32 +323,46 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         }
         
         query += ` WHERE id = $${paramIndex}`;
-        queryParams.push(id);
+        queryParams.push(appointmentId);
         
-                 // If not admin, only allow updating own appointments
-         if (!payload.isAdmin) {
-           query += ` AND user_id = $${paramIndex + 1}`;
-           queryParams.push(payload.userId.toString());
-         }
+        // If not admin, only allow updating own appointments
+        if (!payload.isAdmin) {
+          query += ` AND user_id = $${paramIndex + 1}`;
+          queryParams.push(payload.userId.toString());
+        }
         
-        await client.query(query, queryParams);
+        const result = await client.query(query, queryParams);
         
+        if (result.rowCount === 0) {
+          return res.status(404).json({ error: 'Appointment not found or access denied' });
+        }
+        
+                console.log('PUT appointment successful, updated rows:', result.rowCount);
         res.status(200).json({ success: true });
       } else if (req.method === 'DELETE') {
         // Delete appointment
         const { id } = req.query;
         
+        if (!id) {
+          return res.status(400).json({ error: 'Appointment ID is required' });
+        }
+        
         let query = 'DELETE FROM appointments WHERE id = $1';
         const queryParams = [id];
         
-                 // If not admin, only allow deleting own appointments
-         if (!payload.isAdmin) {
-           query += ' AND user_id = $2';
-           queryParams.push(payload.userId.toString());
-         }
+        // If not admin, only allow deleting own appointments
+        if (!payload.isAdmin) {
+          query += ' AND user_id = $2';
+          queryParams.push(payload.userId.toString());
+        }
         
-        await client.query(query, queryParams);
+        const result = await client.query(query, queryParams);
         
+        if (result.rowCount === 0) {
+          return res.status(404).json({ error: 'Appointment not found or access denied' });
+        }
+        
+        console.log('DELETE appointment successful, deleted rows:', result.rowCount);
         res.status(200).json({ success: true });
       }
       

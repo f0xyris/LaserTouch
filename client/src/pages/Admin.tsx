@@ -221,7 +221,7 @@ const Admin = () => {
   const updateAppointmentStatusMutation = useMutation({
     mutationFn: async ({ appointmentId, status }: { appointmentId: number; status: string }) => {
       const token = localStorage.getItem('auth_token');
-      const response = await fetch(`/api/appointments/${appointmentId}/status`, {
+      const response = await fetch(`/api/appointments?id=${appointmentId}`, {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
@@ -265,7 +265,7 @@ const Admin = () => {
   const deleteAppointmentMutation = useMutation({
     mutationFn: async (appointmentId: number) => {
       const token = localStorage.getItem('auth_token');
-      const response = await fetch(`/api/appointments/${appointmentId}`, {
+      const response = await fetch(`/api/appointments?id=${appointmentId}`, {
         method: "DELETE",
         credentials: "include",
         headers: {
@@ -369,8 +369,8 @@ const Admin = () => {
   // Create appointment mutation for admin
   const createAppointmentMutation = useMutation({
     mutationFn: async (appointmentData: any) => {
-      const token = localStorage.getItem('authToken');
-      const response = await fetch("/api/appointments/admin", {
+      const token = localStorage.getItem('auth_token');
+      const response = await fetch("/api/appointments", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
