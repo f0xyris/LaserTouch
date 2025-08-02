@@ -171,21 +171,29 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           query += ` LEFT JOIN services s ON a.service_id = s.id`;
         }
         
+        console.log('Final query with JOINs:', query);
+        
         console.log('Final query:', query);
         
         const queryParams = [];
+        
+        console.log('User ID from token:', payload.userId);
+        console.log('Is admin:', payload.isAdmin);
         
                  // If not admin, only show user's own appointments
          if (!payload.isAdmin) {
            query += ' WHERE a.user_id = $1';
            queryParams.push(payload.userId.toString());
          }
+         
+         console.log('Query parameters:', queryParams);
         
                            query += ' ORDER BY a.appointment_date DESC';
         
         const appointmentsResult = await client.query(query, queryParams);
         
         console.log('Appointments query result:', appointmentsResult.rows.length, 'appointments found');
+        console.log('Raw appointments data:', appointmentsResult.rows);
         
                  const appointments = appointmentsResult.rows.map(appointment => ({
            id: appointment.id,
