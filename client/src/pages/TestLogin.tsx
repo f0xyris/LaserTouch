@@ -41,6 +41,7 @@ export default function TestLogin() {
   const testRealLogin = async () => {
     setLoading(true);
     try {
+      console.log('Sending login request...');
       const response = await fetch("/api/auth/login", {
         method: "POST",
         headers: {
@@ -48,10 +49,15 @@ export default function TestLogin() {
         },
         body: JSON.stringify({ email, password }),
       });
+      console.log('Response status:', response.status);
+      console.log('Response headers:', response.headers);
+      
       const data = await response.json();
+      console.log('Response data:', data);
       setResult({ type: "real-login", data, status: response.status });
     } catch (error) {
-      setResult({ type: "real-login", error: error });
+      console.error('Login error:', error);
+      setResult({ type: "real-login", error: error, errorMessage: error.message });
     } finally {
       setLoading(false);
     }
