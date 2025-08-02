@@ -72,7 +72,7 @@
       "dest": "/client/dist/$1"
     },
     {
-      "src": "/(.*)",
+      "src": "/((?!api/).*)",
       "dest": "/client/dist/index.html"
     }
   ]
