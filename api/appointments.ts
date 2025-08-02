@@ -209,9 +209,13 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
              lastName: appointment.user_last_name,
              email: appointment.user_email
            },
-           service: {
-             name: appointment.service_name || (servicesNameColumn ? 'Unknown Service' : 'Service ID: ' + appointment.service_id)
-           }
+                       service: {
+              name: typeof appointment.service_name === 'object' && appointment.service_name?.ua 
+                ? appointment.service_name.ua 
+                : (typeof appointment.service_name === 'string' 
+                  ? appointment.service_name 
+                  : (servicesNameColumn ? 'Unknown Service' : 'Service ID: ' + appointment.service_id))
+            }
          }));
         
         res.status(200).json(appointments);
