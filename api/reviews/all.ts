@@ -77,6 +77,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const client = await pool.connect();
     console.log('Database connected successfully');
     
+    try {
       // First, let's check if reviews table exists
       console.log('Checking if reviews table exists...');
       let reviewsStructure;
