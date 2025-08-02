@@ -74,19 +74,30 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       if (req.method === 'GET') {
         console.log('Executing appointments query...');
         
-        // First, let's check the table structures
-        console.log('Checking appointments table structure...');
-        const appointmentsStructure = await client.query(`
-          SELECT column_name, data_type 
-          FROM information_schema.columns 
-          WHERE table_name = 'appointments' 
-          ORDER BY ordinal_position
-        `);
-        
-        console.log('Appointments table columns:', appointmentsStructure.rows.map(row => `${row.column_name} (${row.data_type})`));
+        // First, let's check if appointments table exists
+        console.log('Checking if appointments table exists...');
+        try {
+          const appointmentsStructure = await client.query(`
+            SELECT column_name, data_type 
+            FROM information_schema.columns 
+            WHERE table_name = 'appointments' 
+            ORDER BY ordinal_position
+          `);
+          
+          console.log('Appointments table columns:', appointmentsStructure.rows.map(row => `${row.column_name} (${row.data_type})`));
+          
+          if (appointmentsStructure.rows.length === 0) {
+            console.log('Appointments table does not exist, returning empty array');
+            return res.status(200).json([]);
+          }
+        } catch (error) {
+          console.log('Error checking appointments table structure:', error.message);
+          console.log('Appointments table does not exist, returning empty array');
+          return res.status(200).json([]);
+        }
         
         // Check if services table exists and has name column
-        let servicesNameColumn = 'name';
+        let servicesNameColumn = null;
         try {
           const servicesStructure = await client.query(`
             SELECT column_name, data_type 
@@ -100,6 +111,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           } else if (servicesStructure.rows.some(row => row.column_name === 'name_ua')) {
             servicesNameColumn = 'name_ua';
           }
+          console.log('Services table found, name column:', servicesNameColumn);
         } catch (error) {
           console.log('Services table not found, skipping service name');
         }
@@ -135,6 +147,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           query += ` LEFT JOIN services s ON a.service_id = s.id`;
         }
         
+        console.log('Final query:', query);
+        
         const queryParams = [];
         
                  // If not admin, only show user's own appointments
@@ -165,7 +179,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
             email: appointment.user_email
           },
           service: {
-            name: appointment.service_name || 'Unknown Service'
+            name: appointment.service_name || (servicesNameColumn ? 'Unknown Service' : 'Service ID: ' + appointment.service_id)
           }
         }));
         

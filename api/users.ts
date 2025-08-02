@@ -45,15 +45,22 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
   try {
     console.log('Users endpoint called');
+    console.log('Request headers:', req.headers);
     
     // Verify admin token
     const token = extractTokenFromRequest(req);
+    console.log('Token extracted:', token ? 'Yes' : 'No');
+    
     if (!token) {
+      console.log('No token provided');
       return res.status(401).json({ error: 'No token provided' });
     }
     
     const payload = verifyToken(token);
+    console.log('Token payload:', payload);
+    
     if (!payload || !payload.isAdmin) {
+      console.log('Admin access required, payload:', payload);
       return res.status(403).json({ error: 'Admin access required' });
     }
     
