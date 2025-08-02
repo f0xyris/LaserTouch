@@ -14,7 +14,10 @@
     }
   ],
   "routes": [
-
+    {
+      "src": "/api/db-structure",
+      "dest": "/api/db-structure.ts"
+    },
     {
       "src": "/api/users",
       "dest": "/api/users.ts"
