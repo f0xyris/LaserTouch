@@ -76,11 +76,11 @@ export const queryClient = new QueryClient({
     queries: {
       queryFn: getQueryFn({ on401: "throw" }),
       refetchInterval: false,
-      refetchOnWindowFocus: false, // Временно отключено для тестирования
+      refetchOnWindowFocus: true, // Включаем обновление при фокусе окна для мгновенного отображения изменений
       refetchOnMount: true, // Обновляем данные при монтировании компонента
-      refetchOnReconnect: false, // Временно отключено для тестирования
-      staleTime: 2 * 60 * 1000, // 2 минуты - данные считаются свежими 2 минуты
-      gcTime: 5 * 60 * 1000, // 5 минут - данные хранятся в кеше 5 минут
+      refetchOnReconnect: true, // Включаем обновление при восстановлении соединения
+      staleTime: 30 * 1000, // 30 секунд - данные считаются свежими 30 секунд (быстрее обновление)
+      gcTime: 2 * 60 * 1000, // 2 минуты - данные хранятся в кеше 2 минуты
       retry: 2, // Пробуем повторить запрос 2 раза при ошибке
       retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000),
     },

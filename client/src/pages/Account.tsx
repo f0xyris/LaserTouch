@@ -103,10 +103,13 @@ export default function Account() {
     }
   }, [isAuthenticated, isLoading, toast, t, setLocation]);
 
-  // Get user appointments
+  // Get user appointments with faster refresh settings
   const { data: appointments = [] } = useQuery({
     queryKey: ["/api/appointments/user"],
     enabled: isAuthenticated,
+    staleTime: 10 * 1000, // 10 секунд - данные считаются свежими только 10 секунд
+    refetchOnWindowFocus: true, // Обновляем при фокусе окна
+    refetchOnMount: true, // Обновляем при монтировании
     retry: (failureCount, error) => {
       if (isUnauthorizedError(error)) {
         return false;

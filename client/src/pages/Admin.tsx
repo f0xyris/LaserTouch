@@ -215,9 +215,12 @@ const Admin = () => {
       return data;
     },
     enabled: !!currentUser?.isAdmin,
+    staleTime: 10 * 1000, // 10 секунд - данные считаются свежими только 10 секунд
+    refetchOnWindowFocus: true, // Обновляем при фокусе окна
+    refetchOnMount: true, // Обновляем при монтировании
   });
 
-  // Update appointment status mutation
+  // Update appointment status mutation with optimistic updates
   const updateAppointmentStatusMutation = useMutation({
     mutationFn: async ({ appointmentId, status }: { appointmentId: number; status: string }) => {
       const token = localStorage.getItem('auth_token');
@@ -235,33 +238,76 @@ const Admin = () => {
       }
       return response.json();
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/appointments"] });
-      queryClient.invalidateQueries({ queryKey: ["/api/appointments/recent"] });
-      queryClient.invalidateQueries({ queryKey: ["/api/appointments/user"] });
-      queryClient.invalidateQueries({ queryKey: ["/api/appointments/by-date"] });
-      
-      // Принудительно перезагружаем данные
-      setTimeout(() => {
-        refetchAppointments();
-        refetchRecentAppointments();
-      }, 100);
-      
-      toast({
-        title: t.success,
-        description: t.appointmentStatusUpdated,
+    onMutate: async ({ appointmentId, status }) => {
+      // Cancel any outgoing refetches
+      await queryClient.cancelQueries({ queryKey: ["/api/appointments"] });
+      await queryClient.cancelQueries({ queryKey: ["/api/appointments/recent"] });
+      await queryClient.cancelQueries({ queryKey: ["/api/appointments/user"] });
+
+      // Snapshot the previous value
+      const previousAppointments = queryClient.getQueryData(["/api/appointments"]);
+      const previousRecentAppointments = queryClient.getQueryData(["/api/appointments/recent"]);
+      const previousUserAppointments = queryClient.getQueryData(["/api/appointments/user"]);
+
+      // Optimistically update to the new value
+      queryClient.setQueryData(["/api/appointments"], (old: any) => {
+        if (!old) return old;
+        return old.map((appointment: any) =>
+          appointment.id === appointmentId ? { ...appointment, status } : appointment
+        );
       });
+
+      queryClient.setQueryData(["/api/appointments/recent"], (old: any) => {
+        if (!old) return old;
+        return old.map((appointment: any) =>
+          appointment.id === appointmentId ? { ...appointment, status } : appointment
+        );
+      });
+
+      queryClient.setQueryData(["/api/appointments/user"], (old: any) => {
+        if (!old) return old;
+        return old.map((appointment: any) =>
+          appointment.id === appointmentId ? { ...appointment, status } : appointment
+        );
+      });
+
+      // Return a context object with the snapshotted value
+      return { previousAppointments, previousRecentAppointments, previousUserAppointments };
     },
-    onError: () => {
+    onError: (err, variables, context) => {
+      // If the mutation fails, use the context returned from onMutate to roll back
+      if (context?.previousAppointments) {
+        queryClient.setQueryData(["/api/appointments"], context.previousAppointments);
+      }
+      if (context?.previousRecentAppointments) {
+        queryClient.setQueryData(["/api/appointments/recent"], context.previousRecentAppointments);
+      }
+      if (context?.previousUserAppointments) {
+        queryClient.setQueryData(["/api/appointments/user"], context.previousUserAppointments);
+      }
+      
       toast({
         title: t.error,
         description: t.appointmentStatusUpdateFailed,
         variant: "destructive",
       });
     },
+    onSettled: () => {
+      // Always refetch after error or success
+      queryClient.invalidateQueries({ queryKey: ["/api/appointments"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/appointments/recent"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/appointments/user"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/appointments/by-date"] });
+    },
+    onSuccess: () => {
+      toast({
+        title: t.success,
+        description: t.appointmentStatusUpdated,
+      });
+    },
   });
 
-  // Delete appointment mutation
+  // Delete appointment mutation with optimistic updates
   const deleteAppointmentMutation = useMutation({
     mutationFn: async (appointmentId: number) => {
       const token = localStorage.getItem('auth_token');
@@ -278,45 +324,66 @@ const Admin = () => {
         throw new Error("Failed to delete appointment");
       }
     },
-    onSuccess: () => {
-      
-      // Принудительно обновляем все связанные запросы
-      queryClient.invalidateQueries({ queryKey: ["/api/appointments"] });
-      queryClient.invalidateQueries({ queryKey: ["/api/appointments/recent"] });
-      queryClient.invalidateQueries({ queryKey: ["/api/appointments/user"] });
-      queryClient.invalidateQueries({ queryKey: ["/api/appointments/by-date"] });
-      
-      // Также обновляем данные напрямую
-      queryClient.setQueryData(["/api/appointments"], (oldData: any) => {
-        if (!oldData) return oldData;
-        const filteredData = oldData.filter((appointment: any) => appointment.id !== openDeleteAppointmentDialogId);
-        return filteredData;
+    onMutate: async (appointmentId) => {
+      // Cancel any outgoing refetches
+      await queryClient.cancelQueries({ queryKey: ["/api/appointments"] });
+      await queryClient.cancelQueries({ queryKey: ["/api/appointments/recent"] });
+      await queryClient.cancelQueries({ queryKey: ["/api/appointments/user"] });
+
+      // Snapshot the previous value
+      const previousAppointments = queryClient.getQueryData(["/api/appointments"]);
+      const previousRecentAppointments = queryClient.getQueryData(["/api/appointments/recent"]);
+      const previousUserAppointments = queryClient.getQueryData(["/api/appointments/user"]);
+
+      // Optimistically update to the new value
+      queryClient.setQueryData(["/api/appointments"], (old: any) => {
+        if (!old) return old;
+        return old.filter((appointment: any) => appointment.id !== appointmentId);
       });
-      
-      queryClient.setQueryData(["/api/appointments/recent"], (oldData: any) => {
-        if (!oldData) return oldData;
-        const filteredData = oldData.filter((appointment: any) => appointment.id !== openDeleteAppointmentDialogId);
-        return filteredData;
+
+      queryClient.setQueryData(["/api/appointments/recent"], (old: any) => {
+        if (!old) return old;
+        return old.filter((appointment: any) => appointment.id !== appointmentId);
       });
-      
-      setOpenDeleteAppointmentDialogId(null);
-      
-      // Принудительно перезагружаем данные
-      setTimeout(() => {
-        refetchAppointments();
-        refetchRecentAppointments();
-      }, 100);
-      
-      toast({
-        title: t.success,
-        description: t.appointmentDeleted,
+
+      queryClient.setQueryData(["/api/appointments/user"], (old: any) => {
+        if (!old) return old;
+        return old.filter((appointment: any) => appointment.id !== appointmentId);
       });
+
+      // Return a context object with the snapshotted value
+      return { previousAppointments, previousRecentAppointments, previousUserAppointments };
     },
-    onError: () => {
+    onError: (err, appointmentId, context) => {
+      // If the mutation fails, use the context returned from onMutate to roll back
+      if (context?.previousAppointments) {
+        queryClient.setQueryData(["/api/appointments"], context.previousAppointments);
+      }
+      if (context?.previousRecentAppointments) {
+        queryClient.setQueryData(["/api/appointments/recent"], context.previousRecentAppointments);
+      }
+      if (context?.previousUserAppointments) {
+        queryClient.setQueryData(["/api/appointments/user"], context.previousUserAppointments);
+      }
+      
       toast({
         title: t.error,
         description: t.appointmentDeleteError,
         variant: "destructive",
+      });
+    },
+    onSettled: () => {
+      // Always refetch after error or success
+      queryClient.invalidateQueries({ queryKey: ["/api/appointments"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/appointments/recent"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/appointments/user"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/appointments/by-date"] });
+    },
+    onSuccess: () => {
+      setOpenDeleteAppointmentDialogId(null);
+      toast({
+        title: t.success,
+        description: t.appointmentDeleted,
       });
     },
   });
@@ -366,7 +433,7 @@ const Admin = () => {
     });
   };
 
-  // Create appointment mutation for admin
+  // Create appointment mutation for admin with optimistic updates
   const createAppointmentMutation = useMutation({
     mutationFn: async (appointmentData: any) => {
       const token = localStorage.getItem('auth_token');
@@ -386,13 +453,77 @@ const Admin = () => {
       
       return response.json();
     },
-    onSuccess: (data) => {
+    onMutate: async (appointmentData) => {
+      // Cancel any outgoing refetches
+      await queryClient.cancelQueries({ queryKey: ["/api/appointments"] });
+      await queryClient.cancelQueries({ queryKey: ["/api/appointments/recent"] });
+      await queryClient.cancelQueries({ queryKey: ["/api/appointments/user"] });
+
+      // Snapshot the previous value
+      const previousAppointments = queryClient.getQueryData(["/api/appointments"]);
+      const previousRecentAppointments = queryClient.getQueryData(["/api/appointments/recent"]);
+      const previousUserAppointments = queryClient.getQueryData(["/api/appointments/user"]);
+
+      // Create optimistic appointment object
+      const optimisticAppointment = {
+        id: Date.now(), // Temporary ID
+        serviceId: appointmentData.serviceId,
+        appointmentDate: appointmentData.appointmentDate,
+        status: appointmentData.status || "confirmed",
+        notes: appointmentData.notes,
+        createdAt: new Date().toISOString(),
+        user: {
+          firstName: appointmentData.clientInfo?.name || "Client",
+          lastName: "",
+          email: ""
+        },
+        service: {
+          name: "Loading..." // Will be updated when data refetches
+        },
+        isOptimistic: true // Flag to identify optimistic updates
+      };
+
+      // Optimistically update to the new value
+      queryClient.setQueryData(["/api/appointments"], (old: any) => {
+        if (!old) return [optimisticAppointment];
+        return [optimisticAppointment, ...old];
+      });
+
+      queryClient.setQueryData(["/api/appointments/recent"], (old: any) => {
+        if (!old) return [optimisticAppointment];
+        return [optimisticAppointment, ...old];
+      });
+
+      // Return a context object with the snapshotted value
+      return { previousAppointments, previousRecentAppointments, previousUserAppointments };
+    },
+    onError: (err, appointmentData, context) => {
+      // If the mutation fails, use the context returned from onMutate to roll back
+      if (context?.previousAppointments) {
+        queryClient.setQueryData(["/api/appointments"], context.previousAppointments);
+      }
+      if (context?.previousRecentAppointments) {
+        queryClient.setQueryData(["/api/appointments/recent"], context.previousRecentAppointments);
+      }
+      if (context?.previousUserAppointments) {
+        queryClient.setQueryData(["/api/appointments/user"], context.previousUserAppointments);
+      }
+      
+      toast({
+        title: t.error,
+        description: t.appointmentError || "Failed to create appointment",
+        variant: "destructive",
+      });
+    },
+    onSettled: () => {
+      // Always refetch after error or success
       queryClient.invalidateQueries({ queryKey: ["/api/appointments"] });
       queryClient.invalidateQueries({ queryKey: ["/api/appointments/recent"] });
       queryClient.invalidateQueries({ queryKey: ["/api/appointments/user"] });
       queryClient.invalidateQueries({ queryKey: ["/api/appointments", createFormData.date] });
       queryClient.invalidateQueries({ queryKey: ["/api/appointments/by-date"] });
-      
+    },
+    onSuccess: (data) => {
       // Reset form
       setCreateFormData({
         serviceId: "",
@@ -406,13 +537,6 @@ const Admin = () => {
       toast({
         title: t.success,
         description: t.appointmentCreated || "Appointment created successfully",
-      });
-    },
-    onError: (error) => {
-      toast({
-        title: t.error,
-        description: t.appointmentError || "Failed to create appointment",
-        variant: "destructive",
       });
     },
   });
@@ -500,7 +624,7 @@ const Admin = () => {
     createAppointmentMutation.mutate(appointmentData);
   };
 
-  // Fetch recent appointments
+  // Fetch recent appointments with faster refresh settings
   const { data: recentAppointments, isLoading: recentLoading, refetch: refetchRecentAppointments } = useQuery({
     queryKey: ["/api/appointments/recent"],
     queryFn: async () => {
@@ -519,6 +643,9 @@ const Admin = () => {
       const data = await response.json();
       return data;
     },
+    staleTime: 10 * 1000, // 10 секунд - данные считаются свежими только 10 секунд
+    refetchOnWindowFocus: true, // Обновляем при фокусе окна
+    refetchOnMount: true, // Обновляем при монтировании
   });
 
   // Fetch services for admin appointment creation
