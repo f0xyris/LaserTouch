@@ -63,6 +63,30 @@ export default function TestLogin() {
     }
   };
 
+  const testDebugLogin = async () => {
+    setLoading(true);
+    try {
+      console.log('Sending debug login request...');
+      const response = await fetch("/api/debug-login", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ email, password }),
+      });
+      console.log('Debug response status:', response.status);
+      
+      const data = await response.json();
+      console.log('Debug response data:', data);
+      setResult({ type: "debug-login", data, status: response.status });
+    } catch (error) {
+      console.error('Debug login error:', error);
+      setResult({ type: "debug-login", error: error, errorMessage: error.message });
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-100 p-4">
       <div className="w-full max-w-4xl space-y-6">
@@ -70,7 +94,7 @@ export default function TestLogin() {
           <h1 className="text-2xl font-bold mb-4">Vercel Login Test</h1>
           <p className="text-gray-600 mb-6">Test environment and login functionality</p>
           
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
             <button 
               onClick={testEnvCheck} 
               disabled={loading}
@@ -91,6 +115,13 @@ export default function TestLogin() {
               className="bg-purple-500 text-white px-4 py-2 rounded disabled:opacity-50"
             >
               {loading ? "Testing..." : "Test Real Login"}
+            </button>
+            <button 
+              onClick={testDebugLogin} 
+              disabled={loading || !email || !password}
+              className="bg-orange-500 text-white px-4 py-2 rounded disabled:opacity-50"
+            >
+              {loading ? "Testing..." : "Test Debug Login"}
             </button>
           </div>
 

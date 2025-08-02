@@ -1,7 +1,20 @@
 import 'dotenv/config';
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { Pool } from 'pg';
-import { generateToken } from '../../../shared/jwt';
+import jwt from 'jsonwebtoken';
+
+interface JWTPayload {
+  userId: number;
+  email: string;
+  firstName?: string;
+  lastName?: string;
+  isAdmin: boolean;
+}
+
+function generateToken(payload: JWTPayload): string {
+  const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key-change-in-production';
+  return jwt.sign(payload, JWT_SECRET, { expiresIn: '7d' });
+}
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   try {
