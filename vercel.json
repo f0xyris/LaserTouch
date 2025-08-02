@@ -56,8 +56,24 @@
       "dest": "/client/public/favicon.svg"
     },
     {
+      "src": "/_vercel/insights/script.js",
+      "dest": "/_vercel/insights/script.js"
+    },
+    {
+      "src": "/(.*\\.js)",
+      "dest": "/client/dist/$1"
+    },
+    {
+      "src": "/(.*\\.css)",
+      "dest": "/client/dist/$1"
+    },
+    {
+      "src": "/(.*\\.ico|.*\\.png|.*\\.jpg|.*\\.jpeg|.*\\.gif|.*\\.svg)",
+      "dest": "/client/dist/$1"
+    },
+    {
       "src": "/(.*)",
-      "dest": "/index.html"
+      "dest": "/client/dist/index.html"
     }
   ]
 } 

@@ -1,7 +1,7 @@
 import 'dotenv/config';
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { Pool } from 'pg';
-import { generateToken } from '../../shared/jwt';
+import { generateToken } from '../../../shared/jwt';
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   try {
