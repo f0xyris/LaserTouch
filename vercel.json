@@ -14,10 +14,7 @@
     }
   ],
   "routes": [
-    {
-      "src": "/api/health-check",
-      "dest": "/api/health-check.ts"
-    },
+
     {
       "src": "/api/users",
       "dest": "/api/users.ts"
