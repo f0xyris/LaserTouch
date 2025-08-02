@@ -60,10 +60,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       
       if (columns.includes('id')) query += 'id, ';
       if (columns.includes('title')) query += 'title, ';
+      if (columns.includes('name')) query += 'name, ';
       if (columns.includes('description')) query += 'description, ';
       if (columns.includes('price')) query += 'price, ';
       if (columns.includes('duration')) query += 'duration, ';
       if (columns.includes('image_url')) query += 'image_url, ';
+      if (columns.includes('image')) query += 'image, ';
       if (columns.includes('is_active')) query += 'is_active, ';
       if (columns.includes('created_at')) query += 'created_at, ';
       if (columns.includes('updated_at')) query += 'updated_at, ';
@@ -87,11 +89,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       
       const courses = finalResult.rows.map(course => ({
         id: course.id,
-        title: course.title || 'Untitled Course',
+        title: course.title || course.name || 'Untitled Course',
         description: course.description || '',
         price: course.price || 0,
         duration: course.duration || 60,
-        imageUrl: course.image_url || null,
+        imageUrl: course.image_url || course.image || null,
         isActive: course.is_active !== false,
         createdAt: course.created_at,
         updatedAt: course.updated_at

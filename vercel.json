@@ -23,12 +23,20 @@
       "dest": "/api/services.ts"
     },
     {
+      "src": "/api/reviews",
+      "dest": "/api/reviews.ts"
+    },
+    {
       "src": "/api/reviews/all",
       "dest": "/api/reviews/all.ts"
     },
     {
       "src": "/api/appointments",
       "dest": "/api/appointments.ts"
+    },
+    {
+      "src": "/api/appointments/admin",
+      "dest": "/api/appointments/admin.ts"
     },
 
     {
