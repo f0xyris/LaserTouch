@@ -1,12 +1,10 @@
 import { useState, useEffect } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
-import { useAuth } from './useAuth';
 
 export const useDataPreloader = () => {
   const [isPreloading, setIsPreloading] = useState(true);
   const [preloadProgress, setPreloadProgress] = useState(0);
   const queryClient = useQueryClient();
-  const { isLoading: authLoading } = useAuth();
 
   useEffect(() => {
     const preloadCriticalData = async () => {
@@ -51,14 +49,14 @@ export const useDataPreloader = () => {
         });
         setPreloadProgress(90);
 
-        // Wait for auth to complete
-        if (!authLoading) {
+        // Small delay for smooth transition
+        setTimeout(() => {
           setPreloadProgress(100);
-          // Small delay for smooth transition
           setTimeout(() => {
             setIsPreloading(false);
           }, 500);
-        }
+        }, 200);
+        
       } catch (error) {
         console.error('Error preloading data:', error);
         // Continue even if preloading fails
@@ -70,16 +68,7 @@ export const useDataPreloader = () => {
     };
 
     preloadCriticalData();
-  }, [queryClient, authLoading]);
-
-  // Hide preloader when auth is done and data is preloaded
-  useEffect(() => {
-    if (!authLoading && preloadProgress >= 100) {
-      setTimeout(() => {
-        setIsPreloading(false);
-      }, 500);
-    }
-  }, [authLoading, preloadProgress]);
+  }, [queryClient]);
 
   return {
     isPreloading,
