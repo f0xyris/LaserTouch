@@ -63,29 +63,7 @@ export default function TestLogin() {
     }
   };
 
-  const testDebugLogin = async () => {
-    setLoading(true);
-    try {
-      console.log('Sending debug login request...');
-      const response = await fetch("/api/debug-login", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ email, password }),
-      });
-      console.log('Debug response status:', response.status);
-      
-      const data = await response.json();
-      console.log('Debug response data:', data);
-      setResult({ type: "debug-login", data, status: response.status });
-    } catch (error) {
-      console.error('Debug login error:', error);
-      setResult({ type: "debug-login", error: error, errorMessage: error.message });
-    } finally {
-      setLoading(false);
-    }
-  };
+
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-100 p-4">
@@ -116,13 +94,7 @@ export default function TestLogin() {
             >
               {loading ? "Testing..." : "Test Real Login"}
             </button>
-            <button 
-              onClick={testDebugLogin} 
-              disabled={loading || !email || !password}
-              className="bg-orange-500 text-white px-4 py-2 rounded disabled:opacity-50"
-            >
-              {loading ? "Testing..." : "Test Debug Login"}
-            </button>
+
           </div>
 
           <div className="space-y-4">

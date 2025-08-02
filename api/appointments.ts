@@ -137,11 +137,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         
         const queryParams = [];
         
-        // If not admin, only show user's own appointments
-        if (!payload.isAdmin) {
-          query += ' WHERE a.user_id = $1';
-          queryParams.push(payload.userId);
-        }
+                 // If not admin, only show user's own appointments
+         if (!payload.isAdmin) {
+           query += ' WHERE a.user_id = $1';
+           queryParams.push(payload.userId.toString());
+         }
         
         query += ' ORDER BY a.appointment_date DESC, a.appointment_time DESC';
         
@@ -174,18 +174,18 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         // Create new appointment
         const { serviceId, appointmentDate, appointmentTime, notes } = req.body;
         
-        const result = await client.query(`
-          INSERT INTO appointments (user_id, service_id, appointment_date, appointment_time, status, notes, created_at, updated_at)
-          VALUES ($1, $2, $3, $4, $5, $6, NOW(), NOW())
-          RETURNING id
-        `, [
-          payload.userId,
-          serviceId,
-          appointmentDate,
-          appointmentTime,
-          'pending',
-          notes || ''
-        ]);
+                 const result = await client.query(`
+           INSERT INTO appointments (user_id, service_id, appointment_date, appointment_time, status, notes, created_at, updated_at)
+           VALUES ($1, $2, $3, $4, $5, $6, NOW(), NOW())
+           RETURNING id
+         `, [
+           payload.userId.toString(),
+           serviceId,
+           appointmentDate,
+           appointmentTime,
+           'pending',
+           notes || ''
+         ]);
         
         res.status(201).json({ id: result.rows[0].id });
       } else if (req.method === 'PUT') {
@@ -209,11 +209,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         query += ` WHERE id = $${paramIndex}`;
         queryParams.push(id);
         
-        // If not admin, only allow updating own appointments
-        if (!payload.isAdmin) {
-          query += ` AND user_id = $${paramIndex + 1}`;
-          queryParams.push(payload.userId);
-        }
+                 // If not admin, only allow updating own appointments
+         if (!payload.isAdmin) {
+           query += ` AND user_id = $${paramIndex + 1}`;
+           queryParams.push(payload.userId.toString());
+         }
         
         await client.query(query, queryParams);
         
@@ -225,11 +225,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         let query = 'DELETE FROM appointments WHERE id = $1';
         const queryParams = [id];
         
-        // If not admin, only allow deleting own appointments
-        if (!payload.isAdmin) {
-          query += ' AND user_id = $2';
-          queryParams.push(payload.userId);
-        }
+                 // If not admin, only allow deleting own appointments
+         if (!payload.isAdmin) {
+           query += ' AND user_id = $2';
+           queryParams.push(payload.userId.toString());
+         }
         
         await client.query(query, queryParams);
         

@@ -15,10 +15,6 @@
   ],
   "routes": [
     {
-      "src": "/api/env-check",
-      "dest": "/api/env-check.ts"
-    },
-    {
       "src": "/api/health-check",
       "dest": "/api/health-check.ts"
     },
@@ -38,14 +34,7 @@
       "src": "/api/appointments",
       "dest": "/api/appointments.ts"
     },
-    {
-      "src": "/api/test-login",
-      "dest": "/api/test-login.ts"
-    },
-    {
-      "src": "/api/debug-login",
-      "dest": "/api/debug-login.ts"
-    },
+
     {
       "src": "/api/admin-check",
       "dest": "/api/admin-check.ts"
