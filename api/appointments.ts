@@ -81,27 +81,28 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       if (req.method === 'GET') {
         console.log('Executing appointments query...');
         
-        // First, let's check if appointments table exists
-        console.log('Checking if appointments table exists...');
-        try {
-          const appointmentsStructure = await client.query(`
-            SELECT column_name, data_type 
-            FROM information_schema.columns 
-            WHERE table_name = 'appointments' 
-            ORDER BY ordinal_position
-          `);
-          
-          console.log('Appointments table columns:', appointmentsStructure.rows.map(row => `${row.column_name} (${row.data_type})`));
-          
-          if (appointmentsStructure.rows.length === 0) {
-            console.log('Appointments table does not exist, returning empty array');
-            return res.status(200).json([]);
-          }
-        } catch (error) {
-          console.log('Error checking appointments table structure:', error.message);
-          console.log('Appointments table does not exist, returning empty array');
-          return res.status(200).json([]);
-        }
+                 // First, let's check if appointments table exists
+         console.log('Checking if appointments table exists...');
+         let appointmentsStructure;
+         try {
+           appointmentsStructure = await client.query(`
+             SELECT column_name, data_type 
+             FROM information_schema.columns 
+             WHERE table_name = 'appointments' 
+             ORDER BY ordinal_position
+           `);
+           
+           console.log('Appointments table columns:', appointmentsStructure.rows.map(row => `${row.column_name} (${row.data_type})`));
+           
+           if (appointmentsStructure.rows.length === 0) {
+             console.log('Appointments table does not exist, returning empty array');
+             return res.status(200).json([]);
+           }
+         } catch (error) {
+           console.log('Error checking appointments table structure:', error.message);
+           console.log('Appointments table does not exist, returning empty array');
+           return res.status(200).json([]);
+         }
         
         // Check if services table exists and has name column
         let servicesNameColumn = null;

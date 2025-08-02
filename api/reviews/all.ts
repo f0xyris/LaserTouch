@@ -79,8 +79,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     
       // First, let's check if reviews table exists
       console.log('Checking if reviews table exists...');
+      let reviewsStructure;
       try {
-        const reviewsStructure = await client.query(`
+        reviewsStructure = await client.query(`
           SELECT column_name, data_type 
           FROM information_schema.columns 
           WHERE table_name = 'reviews' 
@@ -99,11 +100,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         return res.status(200).json([]);
       }
       
-             // Check what columns exist in reviews table
-       const reviewsColumns = reviewsStructure.rows.map(row => row.column_name);
-       console.log('Available reviews columns:', reviewsColumns);
-       
-               console.log('Executing reviews query...');
+      try {
+        // Check what columns exist in reviews table
+        const reviewsColumns = reviewsStructure.rows.map(row => row.column_name);
+        console.log('Available reviews columns:', reviewsColumns);
+        
+        console.log('Executing reviews query...');
         let query = `
           SELECT 
             id, 
@@ -141,12 +143,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           FROM reviews 
           ORDER BY id DESC
         `;
-       
-       const reviewsResult = await client.query(query);
-      
-      console.log('Reviews query result:', reviewsResult.rows.length, 'reviews found');
-      
-                     const reviews = reviewsResult.rows.map(review => ({
+        
+        const reviewsResult = await client.query(query);
+        
+        console.log('Reviews query result:', reviewsResult.rows.length, 'reviews found');
+        
+        const reviews = reviewsResult.rows.map(review => ({
           id: review.id,
           userId: review.user_id || null,
           userName: review.name || null,
@@ -158,8 +160,15 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           createdAt: review.created_at || null,
           updatedAt: review.updated_at || null
         }));
-      
-      res.status(200).json(reviews);
+        
+        res.status(200).json(reviews);
+      } catch (error) {
+        console.error('❌ Reviews query error:', error);
+        res.status(500).json({ 
+          error: 'Internal server error',
+          details: process.env.NODE_ENV === 'development' ? error.message : undefined
+        });
+      }
       
     } finally {
       client.release();
