@@ -1889,7 +1889,75 @@ function PricesEditor() {
     setSavingId(null);
   };
 
-  if (loading) return <div>Loading...</div>;
+  if (loading) return (
+    <div className="space-y-8">
+      {/* Courses Skeleton */}
+      <div className="mb-6">
+        <div className="flex items-center gap-2 text-lg font-semibold mb-2">
+          <div className="w-4 h-4 bg-gradient-to-r from-mystical-200 to-mystical-300 dark:from-mystical-700 dark:to-mystical-600 rounded animate-pulse"></div>
+          <div className="h-6 bg-gradient-to-r from-gray-200 to-gray-300 dark:from-gray-700 dark:to-gray-600 rounded w-24 animate-pulse"></div>
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+          {[...Array(3)].map((_, index) => (
+            <div key={index} className="bg-white dark:bg-card rounded-lg shadow-md p-4 border border-mystical-100 dark:border-mystical-700 min-h-[420px] animate-pulse">
+              <div className="space-y-4">
+                <div className="h-8 bg-gradient-to-r from-gray-200 to-gray-300 dark:from-gray-700 dark:to-gray-600 rounded w-3/4"></div>
+                <div className="space-y-2">
+                  <div className="h-4 bg-gradient-to-r from-gray-200 to-gray-300 dark:from-gray-700 dark:to-gray-600 rounded w-full"></div>
+                  <div className="h-4 bg-gradient-to-r from-gray-200 to-gray-300 dark:from-gray-700 dark:to-gray-600 rounded w-2/3"></div>
+                </div>
+                <div className="flex gap-4">
+                  <div className="flex-1 space-y-2">
+                    <div className="h-3 bg-gradient-to-r from-gray-200 to-gray-300 dark:from-gray-700 dark:to-gray-600 rounded w-16"></div>
+                    <div className="h-10 bg-gradient-to-r from-gray-200 to-gray-300 dark:from-gray-700 dark:to-gray-600 rounded"></div>
+                  </div>
+                  <div className="flex-1 space-y-2">
+                    <div className="h-3 bg-gradient-to-r from-gray-200 to-gray-300 dark:from-gray-700 dark:to-gray-600 rounded w-20"></div>
+                    <div className="h-10 bg-gradient-to-r from-gray-200 to-gray-300 dark:from-gray-700 dark:to-gray-600 rounded"></div>
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <div className="h-3 bg-gradient-to-r from-gray-200 to-gray-300 dark:from-gray-700 dark:to-gray-600 rounded w-32"></div>
+                  <div className="h-20 bg-gradient-to-r from-gray-200 to-gray-300 dark:from-gray-700 dark:to-gray-600 rounded"></div>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Services Skeleton */}
+      <div className="mb-6">
+        <div className="flex items-center gap-2 text-lg font-semibold mb-2">
+          <div className="w-4 h-4 bg-gradient-to-r from-mystical-200 to-mystical-300 dark:from-mystical-700 dark:to-mystical-600 rounded animate-pulse"></div>
+          <div className="h-6 bg-gradient-to-r from-gray-200 to-gray-300 dark:from-gray-700 dark:to-gray-600 rounded w-20 animate-pulse"></div>
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {[...Array(3)].map((_, index) => (
+            <div key={index} className="bg-white dark:bg-card rounded-lg shadow-md p-4 border border-mystical-100 dark:border-mystical-700 min-h-[200px] animate-pulse">
+              <div className="space-y-4">
+                <div className="h-6 bg-gradient-to-r from-gray-200 to-gray-300 dark:from-gray-700 dark:to-gray-600 rounded w-3/4"></div>
+                <div className="flex gap-4">
+                  <div className="flex-1 space-y-2">
+                    <div className="h-3 bg-gradient-to-r from-gray-200 to-gray-300 dark:from-gray-700 dark:to-gray-600 rounded w-16"></div>
+                    <div className="h-10 bg-gradient-to-r from-gray-200 to-gray-300 dark:from-gray-700 dark:to-gray-600 rounded"></div>
+                  </div>
+                  <div className="flex-1 space-y-2">
+                    <div className="h-3 bg-gradient-to-r from-gray-200 to-gray-300 dark:from-gray-700 dark:to-gray-600 rounded w-20"></div>
+                    <div className="h-10 bg-gradient-to-r from-gray-200 to-gray-300 dark:from-gray-700 dark:to-gray-600 rounded"></div>
+                  </div>
+                </div>
+                <div className="flex gap-2">
+                  <div className="h-8 bg-gradient-to-r from-mystical-200 to-mystical-300 dark:from-mystical-700 dark:to-mystical-600 rounded w-16"></div>
+                  <div className="h-8 bg-gradient-to-r from-red-200 to-red-300 dark:from-red-700 dark:to-red-600 rounded w-16"></div>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
 
   return (
     <div className="space-y-8">

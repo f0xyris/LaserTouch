@@ -1,3 +1,5 @@
+import React from "react";
+import { cn } from "@/lib/utils";
 import { useLanguage } from "@/contexts/LanguageContext";
 
 interface LoadingSpinnerProps {
@@ -87,6 +89,68 @@ export function LoadingSpinner({ size = "md", text, fullScreen = false, horizont
 
   return spinner;
 }
+
+interface MainLoadingSpinnerProps {
+  className?: string;
+}
+
+export const MainLoadingSpinner: React.FC<MainLoadingSpinnerProps> = ({ className }) => {
+  return (
+    <div className={cn("flex flex-col items-center justify-center min-h-screen bg-gradient-to-br from-mystical-50 to-accent-50 dark:from-deep-900 dark:to-deep-800", className)}>
+      <div className="relative">
+        {/* Main spinner */}
+        <div className="w-24 h-24 animate-spin">
+          <svg className="w-full h-full" viewBox="0 0 100 100" fill="none">
+            <circle 
+              cx="50" 
+              cy="50" 
+              r="45" 
+              stroke="url(#gradient)" 
+              strokeWidth="4" 
+              strokeLinecap="round"
+              strokeDasharray="283"
+              strokeDashoffset="70"
+              className="animate-pulse"
+            />
+            <defs>
+              <linearGradient id="gradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                <stop offset="0%" stopColor="#8B5CF6" />
+                <stop offset="50%" stopColor="#EC4899" />
+                <stop offset="100%" stopColor="#8B5CF6" />
+              </linearGradient>
+            </defs>
+          </svg>
+        </div>
+        
+        {/* Center icon */}
+        <div className="absolute inset-0 flex items-center justify-center">
+          <div className="w-12 h-12 bg-gradient-to-r from-mystical-500 to-accent-500 rounded-full flex items-center justify-center shadow-lg">
+            <svg className="w-6 h-6 text-white" fill="currentColor" viewBox="0 0 20 20">
+              <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-8.293l-3-3a1 1 0 00-1.414 0l-3 3a1 1 0 001.414 1.414L9 9.414V13a1 1 0 102 0V9.414l1.293 1.293a1 1 0 001.414-1.414z" clipRule="evenodd" />
+            </svg>
+          </div>
+        </div>
+      </div>
+      
+      {/* Loading text */}
+      <div className="mt-8 text-center">
+        <h2 className="text-2xl font-bold text-mystical-700 dark:text-mystical-300 mb-2">
+          LaserTouch
+        </h2>
+        <p className="text-mystical-600 dark:text-mystical-400 animate-pulse">
+          Loading your experience...
+        </p>
+      </div>
+      
+      {/* Animated dots */}
+      <div className="flex space-x-1 mt-4">
+        <div className="w-2 h-2 bg-mystical-500 rounded-full animate-bounce"></div>
+        <div className="w-2 h-2 bg-mystical-500 rounded-full animate-bounce" style={{ animationDelay: '0.1s' }}></div>
+        <div className="w-2 h-2 bg-mystical-500 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
+      </div>
+    </div>
+  );
+};
 
 // Page loading component with LaserTouch branding
 export function PageLoader() {

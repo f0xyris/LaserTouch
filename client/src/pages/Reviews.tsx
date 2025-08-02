@@ -179,30 +179,32 @@ const Reviews = () => {
       {/* Список отзывов */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8">
         {loadingReviews ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8">
+          <>
             {[...Array(6)].map((_, index) => (
               <Card key={index} className="shadow-xl dark:shadow-mystical-500/10 bg-background dark:bg-card animate-pulse">
                 <CardContent className="p-4 sm:p-6">
                   <div className="flex items-center mb-4">
-                    <div className="w-12 h-12 bg-gray-200 dark:bg-gray-700 rounded-full"></div>
+                    <div className="w-12 h-12 bg-gradient-to-r from-mystical-200 to-accent-200 dark:from-mystical-700 dark:to-accent-700 rounded-full flex items-center justify-center">
+                      <div className="w-6 h-6 bg-mystical-300 dark:bg-mystical-600 rounded-full"></div>
+                    </div>
                     <div className="ml-4 space-y-2">
-                      <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-24"></div>
+                      <div className="h-4 bg-gradient-to-r from-mystical-200 to-mystical-300 dark:from-mystical-700 dark:to-mystical-600 rounded w-24"></div>
                       <div className="flex space-x-1">
                         {[...Array(5)].map((_, starIndex) => (
-                          <div key={starIndex} className="w-4 h-4 bg-gray-200 dark:bg-gray-700 rounded"></div>
+                          <div key={starIndex} className="w-4 h-4 bg-gradient-to-r from-yellow-200 to-yellow-300 dark:from-yellow-600 dark:to-yellow-500 rounded-sm"></div>
                         ))}
                       </div>
                     </div>
                   </div>
                   <div className="space-y-2">
-                    <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-full"></div>
-                    <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-3/4"></div>
-                    <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-1/2"></div>
+                    <div className="h-4 bg-gradient-to-r from-gray-200 to-gray-300 dark:from-gray-700 dark:to-gray-600 rounded w-full"></div>
+                    <div className="h-4 bg-gradient-to-r from-gray-200 to-gray-300 dark:from-gray-700 dark:to-gray-600 rounded w-3/4"></div>
+                    <div className="h-4 bg-gradient-to-r from-gray-200 to-gray-300 dark:from-gray-700 dark:to-gray-600 rounded w-1/2"></div>
                   </div>
                 </CardContent>
               </Card>
             ))}
-          </div>
+          </>
         ) : (
           allReviews.map((review) => (
             <Card key={review.id} className={`shadow-xl dark:shadow-mystical-500/10 bg-background dark:bg-card hover:shadow-2xl dark:hover:shadow-mystical-500/20 transition-all duration-300 ${'pending' in review && review.pending ? 'opacity-60 pointer-events-none' : ''}`}>

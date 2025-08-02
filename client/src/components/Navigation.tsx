@@ -9,6 +9,12 @@ import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { LoadingSpinner } from "@/components/LoadingSpinner";
 
+interface NavigationItem {
+  href: string;
+  label: string;
+  skeleton?: boolean;
+}
+
 const Navigation = () => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [location] = useLocation();
@@ -16,25 +22,33 @@ const Navigation = () => {
   const { user, isAuthenticated, isLoading, logoutMutation } = useAuth();
 
   const navigationItems = useMemo(() => {
-    const items = [
+    const items: NavigationItem[] = [
       { href: "/", label: t.home },
       { href: "/booking", label: t.booking },
       { href: "/training", label: t.training },
       { href: "/reviews", label: t.reviews },
     ];
     
-    // Добавляем ссылку на аккаунт только если пользователь аутентифицирован
-    if (isAuthenticated && user) {
-      items.push({ href: "/account", label: t.account });
-    }
-    
-    // Добавляем ссылку на админку только если пользователь админ
-    if (isAuthenticated && user?.isAdmin) {
-      items.push({ href: "/admin", label: t.admin });
+    // Show skeleton placeholders while loading
+    if (isLoading) {
+      items.push(
+        { href: "#", label: "Account", skeleton: true },
+        { href: "#", label: "Admin", skeleton: true }
+      );
+    } else {
+      // Добавляем ссылку на аккаунт только если пользователь аутентифицирован
+      if (isAuthenticated && user) {
+        items.push({ href: "/account", label: t.account });
+      }
+      
+      // Добавляем ссылку на админку только если пользователь админ
+      if (isAuthenticated && user?.isAdmin) {
+        items.push({ href: "/admin", label: t.admin });
+      }
     }
     
     return items;
-  }, [t, isAuthenticated, user]);
+  }, [t, isAuthenticated, user, isLoading]);
 
   const isActive = useCallback((href: string) => {
     if (href === "/") {
@@ -56,18 +70,27 @@ const Navigation = () => {
     <div className="hidden lg:block">
       <div className="flex items-baseline space-x-6">
         {navigationItems.map((item) => (
-          <Link
-            key={item.href}
-            href={item.href}
-            className={cn(
-              "px-2 py-2 font-medium transition-colors whitespace-nowrap",
-              isActive(item.href)
-                ? "text-mystical-600 dark:text-mystical-400"
-                : "text-gray-700 dark:text-foreground hover:text-mystical-600 dark:hover:text-mystical-400"
-            )}
-          >
-            {item.label}
-          </Link>
+          item.skeleton ? (
+            <div
+              key={item.href}
+              className="px-2 py-2 font-medium transition-colors whitespace-nowrap"
+            >
+              <div className="h-4 bg-gradient-to-r from-gray-200 to-gray-300 dark:from-gray-700 dark:to-gray-600 rounded w-16 animate-pulse"></div>
+            </div>
+          ) : (
+            <Link
+              key={item.href}
+              href={item.href}
+              className={cn(
+                "px-2 py-2 font-medium transition-colors whitespace-nowrap",
+                isActive(item.href)
+                  ? "text-mystical-600 dark:text-mystical-400"
+                  : "text-gray-700 dark:text-foreground hover:text-mystical-600 dark:hover:text-mystical-400"
+              )}
+            >
+              {item.label}
+            </Link>
+          )
         ))}
       </div>
     </div>
@@ -168,19 +191,28 @@ const Navigation = () => {
           <div className="bg-white dark:bg-deep-900 shadow-xl border-t border-gray-200 dark:border-gray-700 max-h-[calc(100vh-4rem)] overflow-y-auto">
             <div className="px-4 py-3 space-y-1">
               {navigationItems.map((item) => (
-                <Link
-                  key={item.href}
-                  href={item.href}
-                  onClick={closeMobileMenu}
-                  className={cn(
-                    "block px-4 py-3 text-base font-medium transition-colors rounded-lg",
-                    isActive(item.href)
-                      ? "text-mystical-600 dark:text-mystical-400 bg-mystical-50 dark:bg-mystical-900/20"
-                      : "text-gray-700 dark:text-foreground hover:text-mystical-600 dark:hover:text-mystical-400 hover:bg-mystical-50 dark:hover:bg-mystical-900/20"
-                  )}
-                >
-                  {item.label}
-                </Link>
+                item.skeleton ? (
+                  <div
+                    key={item.href}
+                    className="block px-4 py-3 text-base font-medium transition-colors rounded-lg"
+                  >
+                    <div className="h-4 bg-gradient-to-r from-gray-200 to-gray-300 dark:from-gray-700 dark:to-gray-600 rounded w-16 animate-pulse"></div>
+                  </div>
+                ) : (
+                  <Link
+                    key={item.href}
+                    href={item.href}
+                    onClick={closeMobileMenu}
+                    className={cn(
+                      "block px-4 py-3 text-base font-medium transition-colors rounded-lg",
+                      isActive(item.href)
+                        ? "text-mystical-600 dark:text-mystical-400 bg-mystical-50 dark:bg-mystical-900/20"
+                        : "text-gray-700 dark:text-foreground hover:text-mystical-600 dark:hover:text-mystical-400 hover:bg-mystical-50 dark:hover:bg-mystical-900/20"
+                    )}
+                  >
+                    {item.label}
+                  </Link>
+                )
               ))}
             </div>
           </div>

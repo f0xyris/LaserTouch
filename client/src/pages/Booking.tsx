@@ -230,8 +230,12 @@ const Booking = () => {
                 {t.selectService}
               </Label>
               {servicesLoading ? (
-                <div className="flex justify-center py-4">
-                  <LoadingSpinner size="sm" />
+                <div className="space-y-3">
+                  <div className="h-10 bg-gradient-to-r from-gray-200 to-gray-300 dark:from-gray-700 dark:to-gray-600 rounded-md animate-pulse"></div>
+                  <div className="flex items-center gap-2">
+                    <div className="w-4 h-4 bg-gradient-to-r from-mystical-200 to-mystical-300 dark:from-mystical-700 dark:to-mystical-600 rounded-full animate-pulse"></div>
+                    <div className="h-3 bg-gradient-to-r from-gray-200 to-gray-300 dark:from-gray-700 dark:to-gray-600 rounded w-32 animate-pulse"></div>
+                  </div>
                 </div>
               ) : (
                 <Select value={formData.serviceId} onValueChange={(value) => handleInputChange("serviceId", value)}>
