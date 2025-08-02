@@ -228,6 +228,7 @@ export const LaserBodyPreloader: React.FC<{ className?: string }> = ({ className
         {/* Elegant female body silhouette */}
         <svg className="w-full h-full" viewBox="0 0 320 384" fill="none">
           <defs>
+            {/* Laser beam gradient */}
             <linearGradient id="laserBeam" x1="0%" y1="0%" x2="100%" y2="0%">
               <stop offset="0%" stopColor="#8B5CF6" stopOpacity="0" />
               <stop offset="20%" stopColor="#EC4899" stopOpacity="0.8" />
@@ -235,14 +236,13 @@ export const LaserBodyPreloader: React.FC<{ className?: string }> = ({ className
               <stop offset="80%" stopColor="#EC4899" stopOpacity="0.8" />
               <stop offset="100%" stopColor="#8B5CF6" stopOpacity="0" />
             </linearGradient>
-            <mask id="bodyMask">
-              <path
-                d="M160 30 C 120 30, 100 50, 100 90 C 100 130, 120 150, 160 150 C 200 150, 220 130, 220 90 C 220 50, 200 30, 160 30 Z M 120 150 L 120 210 C 120 230, 140 250, 160 250 C 180 250, 200 230, 200 210 L 200 150 M 160 250 L 160 330 C 160 350, 140 370, 120 370 C 100 370, 80 350, 80 330 L 80 290 M 160 250 L 160 330 C 160 350, 180 370, 200 370 C 220 370, 240 350, 240 330 L 240 290"
-                fill="white"
-                stroke="white"
-                strokeWidth="3"
-              />
-            </mask>
+            
+            {/* Animated laser dot */}
+            <radialGradient id="laserDot" cx="50%" cy="50%" r="50%">
+              <stop offset="0%" stopColor="#EC4899" stopOpacity="1" />
+              <stop offset="70%" stopColor="#EC4899" stopOpacity="0.8" />
+              <stop offset="100%" stopColor="#EC4899" stopOpacity="0" />
+            </radialGradient>
           </defs>
           
           {/* Body outline - elegant thin lines */}
@@ -254,15 +254,23 @@ export const LaserBodyPreloader: React.FC<{ className?: string }> = ({ className
             className="dark:stroke-gray-600"
           />
           
-          {/* Animated laser beam tracing the silhouette */}
-          <rect
-            x="0"
-            y="0"
-            width="320"
-            height="384"
-            fill="url(#laserBeam)"
-            mask="url(#bodyMask)"
-            className="laser-scan-animation"
+          {/* Animated laser dot that follows the silhouette */}
+          <circle
+            cx="160"
+            cy="30"
+            r="3"
+            fill="url(#laserDot)"
+            className="laser-dot-animation"
+          />
+          
+          {/* Laser beam effect that follows the path */}
+          <path
+            d="M160 30 C 120 30, 100 50, 100 90 C 100 130, 120 150, 160 150 C 200 150, 220 130, 220 90 C 220 50, 200 30, 160 30 Z M 120 150 L 120 210 C 120 230, 140 250, 160 250 C 180 250, 200 230, 200 210 L 200 150 M 160 250 L 160 330 C 160 350, 140 370, 120 370 C 100 370, 80 350, 80 330 L 80 290 M 160 250 L 160 330 C 160 350, 180 370, 200 370 C 220 370, 240 350, 240 330 L 240 290"
+            stroke="url(#laserBeam)"
+            strokeWidth="2"
+            fill="none"
+            strokeDasharray="8,4"
+            className="laser-path-animation"
           />
         </svg>
       </div>

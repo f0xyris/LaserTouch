@@ -738,6 +738,93 @@ input, textarea {
   filter: drop-shadow(0 0 8px rgba(236, 72, 153, 0.6));
 }
 
+/* Laser animations for preloader */
+@keyframes laserDotMove {
+  0% {
+    transform: translate(0px, 0px);
+  }
+  5% {
+    transform: translate(-40px, 0px);
+  }
+  10% {
+    transform: translate(-60px, 20px);
+  }
+  15% {
+    transform: translate(-60px, 40px);
+  }
+  20% {
+    transform: translate(-60px, 60px);
+  }
+  25% {
+    transform: translate(-40px, 80px);
+  }
+  30% {
+    transform: translate(-20px, 80px);
+  }
+  35% {
+    transform: translate(0px, 80px);
+  }
+  40% {
+    transform: translate(20px, 80px);
+  }
+  45% {
+    transform: translate(40px, 80px);
+  }
+  50% {
+    transform: translate(60px, 60px);
+  }
+  55% {
+    transform: translate(60px, 40px);
+  }
+  60% {
+    transform: translate(60px, 20px);
+  }
+  65% {
+    transform: translate(40px, 0px);
+  }
+  70% {
+    transform: translate(20px, 0px);
+  }
+  75% {
+    transform: translate(0px, 0px);
+  }
+  80% {
+    transform: translate(-40px, 0px);
+  }
+  85% {
+    transform: translate(-40px, 20px);
+  }
+  90% {
+    transform: translate(-40px, 40px);
+  }
+  95% {
+    transform: translate(-20px, 60px);
+  }
+  100% {
+    transform: translate(0px, 0px);
+  }
+}
+
+@keyframes laserPathDraw {
+  0% {
+    stroke-dashoffset: 1200;
+  }
+  100% {
+    stroke-dashoffset: 0;
+  }
+}
+
+.laser-dot-animation {
+  animation: laserDotMove 8s ease-in-out infinite;
+  filter: drop-shadow(0 0 6px rgba(236, 72, 153, 0.9));
+}
+
+.laser-path-animation {
+  animation: laserPathDraw 8s ease-in-out infinite;
+  stroke-dasharray: 1200;
+  stroke-dashoffset: 1200;
+}
+
 /* Preloader fade transitions */
 .preloader-fade-in {
   animation: fadeIn 0.8s ease-in-out;
