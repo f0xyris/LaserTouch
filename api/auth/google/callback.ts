@@ -1,7 +1,7 @@
 import 'dotenv/config';
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { Pool } from 'pg';
-import { generateToken } from '../../utils/jwt';
+import { generateToken } from '../../shared/jwt';
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   try {
@@ -121,7 +121,13 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       }
       
       // Generate JWT token
-      const token = generateToken(user.id);
+      const token = generateToken({
+        userId: user.id,
+        email: user.email,
+        firstName: user.first_name,
+        lastName: user.last_name,
+        isAdmin: user.is_admin
+      });
       
 
       
