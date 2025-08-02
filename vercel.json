@@ -3,7 +3,10 @@
   "builds": [
     {
       "src": "package.json",
-      "use": "@vercel/static-build"
+      "use": "@vercel/static-build",
+      "config": {
+        "distDir": "dist"
+      }
     },
     {
       "src": "api/**/*.ts",
@@ -56,27 +59,23 @@
       "dest": "/client/public/favicon.svg"
     },
     {
+      "src": "/sw.js",
+      "dest": "/client/public/sw.js"
+    },
+    {
+      "src": "/default-avatar.png",
+      "dest": "/client/public/default-avatar.png"
+    },
+    {
       "src": "/_vercel/insights/script.js",
       "dest": "/_vercel/insights/script.js"
-    },
-    {
-      "src": "/(.*\\.js)",
-      "dest": "/client/dist/$1"
-    },
-    {
-      "src": "/(.*\\.css)",
-      "dest": "/client/dist/$1"
-    },
-    {
-      "src": "/(.*\\.ico|.*\\.png|.*\\.jpg|.*\\.jpeg|.*\\.gif|.*\\.svg)",
-      "dest": "/client/dist/$1"
     },
     {
       "handle": "filesystem"
     },
     {
-      "src": "/.*",
-      "dest": "/client/dist/index.html"
+      "src": "/(.*)",
+      "dest": "/index.html"
     }
   ]
 } 
