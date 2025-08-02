@@ -120,11 +120,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         query += `, service_id`;
       }
       
-      // Add status if it exists (instead of is_approved)
+      // Add status column
       if (reviewsColumns.includes('status')) {
         query += `, status`;
-      } else if (reviewsColumns.includes('is_approved')) {
-        query += `, is_approved`;
       }
       
       // Add created_at and updated_at if they exist
@@ -141,7 +139,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       
       // Add WHERE clause for non-admin users (only show approved reviews)
       if (!isAdmin) {
-        query += ` WHERE status = 'approved' OR is_approved = true`;
+        query += ` WHERE status = 'approved'`;
       }
       
       query += ` ORDER BY id DESC`;
@@ -157,7 +155,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         serviceId: review.service_id || null,
         rating: review.rating,
         comment: review.comment,
-        isApproved: review.status === 'approved' || review.is_approved || false, // Handle status column
+        isApproved: review.status === 'approved' || false,
         status: review.status || null,
         createdAt: review.created_at || null,
         updatedAt: review.updated_at || null

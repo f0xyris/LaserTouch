@@ -135,10 +135,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
              a.service_id, 
              a.appointment_date`;
          
-         // Add appointment_time only if it exists
-         if (appointmentsColumns.includes('appointment_time')) {
-           query += `, a.appointment_time`;
-         }
+         
          
          // Add other columns that might exist
          if (appointmentsColumns.includes('status')) {
@@ -186,12 +183,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
            queryParams.push(payload.userId.toString());
          }
         
-                 // Add appointment_time to ORDER BY only if it exists
-         if (appointmentsColumns.includes('appointment_time')) {
-           query += ' ORDER BY a.appointment_date DESC, a.appointment_time DESC';
-         } else {
-           query += ' ORDER BY a.appointment_date DESC';
-         }
+                           query += ' ORDER BY a.appointment_date DESC';
         
         const appointmentsResult = await client.query(query, queryParams);
         
@@ -202,7 +194,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
            userId: appointment.user_id,
            serviceId: appointment.service_id,
            appointmentDate: appointment.appointment_date,
-           appointmentTime: appointment.appointment_time || null, // Handle missing column
+                       appointmentTime: null, // No separate appointment_time column
            status: appointment.status,
            notes: appointment.notes,
            createdAt: appointment.created_at,
@@ -226,18 +218,17 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         // Otherwise, use the current user's ID
         const targetUserId = (payload.isAdmin && userId) ? userId : payload.userId;
         
-                 const result = await client.query(`
-           INSERT INTO appointments (user_id, service_id, appointment_date, appointment_time, status, notes, created_at, updated_at)
-           VALUES ($1, $2, $3, $4, $5, $6, NOW(), NOW())
-           RETURNING id
-         `, [
-           targetUserId.toString(),
-           serviceId,
-           appointmentDate,
-           appointmentTime,
-           'pending',
-           notes || ''
-         ]);
+                         const result = await client.query(`
+          INSERT INTO appointments (user_id, service_id, appointment_date, status, notes, created_at, updated_at)
+          VALUES ($1, $2, $3, $4, $5, NOW(), NOW())
+          RETURNING id
+        `, [
+          targetUserId.toString(),
+          serviceId,
+          appointmentDate,
+          'pending',
+          notes || ''
+        ]);
         
         res.status(201).json({ id: result.rows[0].id });
       } else if (req.method === 'PUT') {

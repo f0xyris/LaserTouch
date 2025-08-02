@@ -79,8 +79,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         
         const services = servicesResult.rows.map(service => ({
           id: service.id,
-          name: service.name || 'Untitled Service',
-          description: service.description || '',
+          name: service.name || { ua: 'Untitled Service', en: 'Untitled Service', pl: 'Untitled Service' },
+          description: service.description || { ua: '', en: '', pl: '' },
           price: service.price || 0,
           duration: service.duration || 60,
           isActive: service.is_active !== false,
@@ -94,16 +94,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         const { name, description, price, duration } = req.body;
         
         const result = await client.query(`
-          INSERT INTO services (name_ua, name_en, name_ru, description_ua, description_en, description_ru, price, duration, is_active, created_at, updated_at)
-          VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, NOW(), NOW())
+          INSERT INTO services (name, description, price, duration, is_active, created_at, updated_at)
+          VALUES ($1, $2, $3, $4, $5, NOW(), NOW())
           RETURNING id
         `, [
-          name?.ua || '',
-          name?.en || '',
-          name?.ru || '',
-          description?.ua || '',
-          description?.en || '',
-          description?.ru || '',
+          JSON.stringify(name || { ua: '', en: '', pl: '' }),
+          JSON.stringify(description || { ua: '', en: '', pl: '' }),
           price || 0,
           duration || 60,
           true
@@ -116,17 +112,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         
         await client.query(`
           UPDATE services 
-          SET name_ua = $1, name_en = $2, name_ru = $3, 
-              description_ua = $4, description_en = $5, description_ru = $6, 
-              price = $7, duration = $8, updated_at = NOW()
-          WHERE id = $9
+          SET name = $1, description = $2, price = $3, duration = $4, updated_at = NOW()
+          WHERE id = $5
         `, [
-          name?.ua || '',
-          name?.en || '',
-          name?.ru || '',
-          description?.ua || '',
-          description?.en || '',
-          description?.ru || '',
+          JSON.stringify(name || { ua: '', en: '', pl: '' }),
+          JSON.stringify(description || { ua: '', en: '', pl: '' }),
           price || 0,
           duration || 60,
           id
