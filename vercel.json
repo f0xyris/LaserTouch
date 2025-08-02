@@ -72,7 +72,10 @@
       "dest": "/client/dist/$1"
     },
     {
-      "src": "/((?!api/).*)",
+      "handle": "filesystem"
+    },
+    {
+      "src": "/.*",
       "dest": "/client/dist/index.html"
     }
   ]
