@@ -123,21 +123,27 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           console.log('Services table not found, skipping service name');
         }
         
-        let query = `
-          SELECT 
-            a.id, 
-            a.user_id, 
-            a.service_id, 
-            a.appointment_date, 
-            a.appointment_time, 
-            a.status, 
-            a.notes, 
-            a.created_at, 
-            a.updated_at,
-            u.first_name as user_first_name,
-            u.last_name as user_last_name,
-            u.email as user_email
-        `;
+                 // Check what columns exist in appointments table
+         const appointmentsColumns = appointmentsStructure.rows.map(row => row.column_name);
+         console.log('Available appointments columns:', appointmentsColumns);
+         
+         let query = `
+           SELECT 
+             a.id, 
+             a.user_id, 
+             a.service_id, 
+             a.appointment_date`;
+         
+         // Add appointment_time only if it exists
+         if (appointmentsColumns.includes('appointment_time')) {
+           query += `, a.appointment_time`;
+         }
+         
+         query += `, a.status, a.notes, a.created_at, a.updated_at,
+             u.first_name as user_first_name,
+             u.last_name as user_last_name,
+             u.email as user_email
+         `;
         
         // Add service name if services table exists
         if (servicesNameColumn) {
@@ -164,31 +170,36 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
            queryParams.push(payload.userId.toString());
          }
         
-        query += ' ORDER BY a.appointment_date DESC, a.appointment_time DESC';
+                 // Add appointment_time to ORDER BY only if it exists
+         if (appointmentsColumns.includes('appointment_time')) {
+           query += ' ORDER BY a.appointment_date DESC, a.appointment_time DESC';
+         } else {
+           query += ' ORDER BY a.appointment_date DESC';
+         }
         
         const appointmentsResult = await client.query(query, queryParams);
         
         console.log('Appointments query result:', appointmentsResult.rows.length, 'appointments found');
         
-        const appointments = appointmentsResult.rows.map(appointment => ({
-          id: appointment.id,
-          userId: appointment.user_id,
-          serviceId: appointment.service_id,
-          appointmentDate: appointment.appointment_date,
-          appointmentTime: appointment.appointment_time,
-          status: appointment.status,
-          notes: appointment.notes,
-          createdAt: appointment.created_at,
-          updatedAt: appointment.updated_at,
-          user: {
-            firstName: appointment.user_first_name,
-            lastName: appointment.user_last_name,
-            email: appointment.user_email
-          },
-          service: {
-            name: appointment.service_name || (servicesNameColumn ? 'Unknown Service' : 'Service ID: ' + appointment.service_id)
-          }
-        }));
+                 const appointments = appointmentsResult.rows.map(appointment => ({
+           id: appointment.id,
+           userId: appointment.user_id,
+           serviceId: appointment.service_id,
+           appointmentDate: appointment.appointment_date,
+           appointmentTime: appointment.appointment_time || null, // Handle missing column
+           status: appointment.status,
+           notes: appointment.notes,
+           createdAt: appointment.created_at,
+           updatedAt: appointment.updated_at,
+           user: {
+             firstName: appointment.user_first_name,
+             lastName: appointment.user_last_name,
+             email: appointment.user_email
+           },
+           service: {
+             name: appointment.service_name || (servicesNameColumn ? 'Unknown Service' : 'Service ID: ' + appointment.service_id)
+           }
+         }));
         
         res.status(200).json(appointments);
       } else if (req.method === 'POST') {

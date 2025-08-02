@@ -99,31 +99,41 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         return res.status(200).json([]);
       }
       
-      console.log('Executing reviews query...');
-      const reviewsResult = await client.query(`
-        SELECT 
-          id, 
-          user_id, 
-          rating, 
-          comment, 
-          is_approved, 
-          created_at, 
-          updated_at
-        FROM reviews 
-        ORDER BY created_at DESC
-      `);
+             // Check what columns exist in reviews table
+       const reviewsColumns = reviewsStructure.rows.map(row => row.column_name);
+       console.log('Available reviews columns:', reviewsColumns);
+       
+       console.log('Executing reviews query...');
+       let query = `
+         SELECT 
+           id, 
+           user_id, 
+           rating, 
+           comment`;
+       
+       // Add is_approved only if it exists
+       if (reviewsColumns.includes('is_approved')) {
+         query += `, is_approved`;
+       }
+       
+       query += `, created_at, updated_at
+         FROM reviews 
+         ORDER BY created_at DESC
+       `;
+       
+       const reviewsResult = await client.query(query);
       
       console.log('Reviews query result:', reviewsResult.rows.length, 'reviews found');
       
-      const reviews = reviewsResult.rows.map(review => ({
-        id: review.id,
-        userId: review.user_id,
-        rating: review.rating,
-        comment: review.comment,
-        isApproved: review.is_approved,
-        createdAt: review.created_at,
-        updatedAt: review.updated_at
-      }));
+             const reviews = reviewsResult.rows.map(review => ({
+         id: review.id,
+         userId: review.user_id,
+         rating: review.rating,
+         comment: review.comment,
+         isApproved: review.is_approved || false, // Handle missing column
+         createdAt: review.created_at,
+         updatedAt: review.updated_at
+       }));
       
       res.status(200).json(reviews);
       
