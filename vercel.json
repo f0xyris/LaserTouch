@@ -30,8 +30,10 @@
       "src": "/api/appointments",
       "dest": "/api/appointments.ts"
     },
-
-
+    {
+      "src": "/api/appointments/by-date",
+      "dest": "/api/appointments/by-date.ts"
+    },
     {
       "src": "/api/admin-check",
       "dest": "/api/admin-check.ts"

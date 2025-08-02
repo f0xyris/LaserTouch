@@ -172,41 +172,7 @@ const Booking = () => {
     
 
     
-    // Check availability before creating appointment
-    try {
-      const availabilityResponse = await fetch("/api/appointments/check-availability", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          serviceId: parseInt(formData.serviceId),
-          appointmentDate: appointmentDateTime.toISOString(),
-        }),
-      });
 
-      if (!availabilityResponse.ok) {
-        throw new Error("Failed to check availability");
-      }
-
-      const availabilityData = await availabilityResponse.json();
-      
-      if (!availabilityData.available) {
-        toast({
-          title: t.error || "Error",
-          description: t.timeSlotUnavailable || "This time slot is unavailable",
-          variant: "destructive",
-        });
-        return;
-      }
-    } catch (error) {
-      toast({
-        title: t.error || "Error",
-        description: t.appointmentError || "Failed to check availability",
-        variant: "destructive",
-      });
-      return;
-    }
     
     const appointmentData = {
       serviceId: parseInt(formData.serviceId),

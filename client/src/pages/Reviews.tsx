@@ -20,7 +20,7 @@ const Reviews = () => {
   // Получаем отзывы с сервера
   useEffect(() => {
     setLoadingReviews(true);
-    fetch("/api/reviews")
+    fetch("/api/reviews/all")
       .then(res => res.ok ? res.json() : [])
       .then(data => setReviews(Array.isArray(data) ? data : []))
       .catch(() => setReviews([]))
