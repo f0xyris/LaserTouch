@@ -48,6 +48,7 @@ import {
   AlertDialogAction,
   AlertDialogCancel
 } from "@/components/ui/alert-dialog";
+import React from "react";
 
 const Admin = () => {
   const { t } = useLanguage();
@@ -418,13 +419,13 @@ const Admin = () => {
   };
 
   const isTimeSlotBooked = (time: string) => {
-    if (!bookedAppointments || !createFormData.date) return false;
+    if (!filteredBookedAppointments || !createFormData.date) return false;
     
     const [year, month, day] = createFormData.date.split('-').map(Number);
     const [hour, minute] = time.split(':').map(Number);
     const selectedDateTime = new Date(year, month - 1, day, hour, minute, 0);
     
-    return bookedAppointments.some((appointment: any) => {
+    return filteredBookedAppointments.some((appointment: any) => {
       const appointmentDate = new Date(appointment.appointmentDate);
       return appointmentDate.getTime() === selectedDateTime.getTime() && 
              appointment.status !== 'cancelled' && 
@@ -661,11 +662,10 @@ const Admin = () => {
     }
   });
 
-  // Get booked appointments for the selected date in admin form
+  // Get booked appointments for the selected date in admin form - pre-fetch all appointments
   const { data: bookedAppointments } = useQuery({
-    queryKey: ["/api/appointments", createFormData.date],
+    queryKey: ["/api/appointments"],
     queryFn: async () => {
-      if (!createFormData.date) return [];
       const token = localStorage.getItem('auth_token');
       const response = await fetch("/api/appointments", {
         credentials: "include",
@@ -677,16 +677,23 @@ const Admin = () => {
       });
       if (!response.ok) throw new Error("Failed to fetch appointments");
       const appointments = await response.json();
-      
-      // Filter appointments for the selected date
-      const selectedDate = new Date(createFormData.date);
-      return appointments.filter((appointment: any) => {
-        const appointmentDate = new Date(appointment.appointmentDate);
-        return appointmentDate.toDateString() === selectedDate.toDateString();
-      });
+      return appointments;
     },
-    enabled: !!createFormData.date
+    staleTime: 5 * 1000, // 5 seconds - very fresh data for booking
+    refetchOnWindowFocus: true,
+    refetchOnMount: true,
   });
+
+  // Filter booked appointments for the selected date
+  const filteredBookedAppointments = React.useMemo(() => {
+    if (!bookedAppointments || !createFormData.date) return [];
+    
+    const selectedDate = new Date(createFormData.date);
+    return bookedAppointments.filter((appointment: any) => {
+      const appointmentDate = new Date(appointment.appointmentDate);
+      return appointmentDate.toDateString() === selectedDate.toDateString();
+    });
+  }, [bookedAppointments, createFormData.date]);
 
   // Update admin status mutation
   const updateAdminMutation = useMutation({
@@ -1056,8 +1063,23 @@ const Admin = () => {
         </CardHeader>
         <CardContent>
           {recentLoading ? (
-            <div className="flex items-center justify-center py-8">
-              <LoadingSpinner />
+            <div className="space-y-4">
+              {[...Array(3)].map((_, index) => (
+                <div key={index} className="flex items-center justify-between p-4 border rounded-lg animate-pulse">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 bg-gray-200 dark:bg-gray-700 rounded-full"></div>
+                    <div className="space-y-2">
+                      <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-32"></div>
+                      <div className="h-3 bg-gray-200 dark:bg-gray-700 rounded w-24"></div>
+                      <div className="h-3 bg-gray-200 dark:bg-gray-700 rounded w-20"></div>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <div className="h-6 bg-gray-200 dark:bg-gray-700 rounded w-16"></div>
+                    <div className="h-8 bg-gray-200 dark:bg-gray-700 rounded w-8"></div>
+                  </div>
+                </div>
+              ))}
             </div>
           ) : (
             <div className="space-y-4">

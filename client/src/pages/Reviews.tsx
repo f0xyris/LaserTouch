@@ -6,6 +6,7 @@ import { Star, User } from "lucide-react";
 import { useLanguage } from "@/contexts/LanguageContext";
 import React, { useState, useEffect } from "react";
 import { useAuth } from "@/hooks/useAuth";
+import { useQuery } from "@tanstack/react-query";
 
 const Reviews = () => {
   const { t } = useLanguage();
@@ -14,18 +15,20 @@ const Reviews = () => {
   const [form, setForm] = useState<ReviewForm>({ name: "", comment: "", rating: 0 });
   const [submitting, setSubmitting] = useState(false);
   const [pendingReviews, setPendingReviews] = useState<ReviewForm[]>([]);
-  const [reviews, setReviews] = useState<any[]>([]);
-  const [loadingReviews, setLoadingReviews] = useState(true);
 
-  // Получаем отзывы с сервера
-  useEffect(() => {
-    setLoadingReviews(true);
-    fetch("/api/reviews/all")
-      .then(res => res.ok ? res.json() : [])
-      .then(data => setReviews(Array.isArray(data) ? data : []))
-      .catch(() => setReviews([]))
-      .finally(() => setLoadingReviews(false));
-  }, []);
+  // Получаем отзывы с сервера используя React Query для лучшей производительности
+  const { data: reviews = [], isLoading: loadingReviews } = useQuery({
+    queryKey: ["/api/reviews/all"],
+    queryFn: async () => {
+      const response = await fetch("/api/reviews/all");
+      if (!response.ok) return [];
+      const data = await response.json();
+      return Array.isArray(data) ? data : [];
+    },
+    staleTime: 30 * 1000, // 30 секунд - данные считаются свежими
+    refetchOnWindowFocus: true,
+    refetchOnMount: true,
+  });
 
   // Добавляем новые отзывы, которые "на модерации"
   type ReviewCard = ReviewForm & { id: string | number; pending?: boolean };
@@ -176,7 +179,30 @@ const Reviews = () => {
       {/* Список отзывов */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8">
         {loadingReviews ? (
-          <div className="text-center py-8">{t.loading || "Loading..."}</div>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8">
+            {[...Array(6)].map((_, index) => (
+              <Card key={index} className="shadow-xl dark:shadow-mystical-500/10 bg-background dark:bg-card animate-pulse">
+                <CardContent className="p-4 sm:p-6">
+                  <div className="flex items-center mb-4">
+                    <div className="w-12 h-12 bg-gray-200 dark:bg-gray-700 rounded-full"></div>
+                    <div className="ml-4 space-y-2">
+                      <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-24"></div>
+                      <div className="flex space-x-1">
+                        {[...Array(5)].map((_, starIndex) => (
+                          <div key={starIndex} className="w-4 h-4 bg-gray-200 dark:bg-gray-700 rounded"></div>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                  <div className="space-y-2">
+                    <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-full"></div>
+                    <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-3/4"></div>
+                    <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-1/2"></div>
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
         ) : (
           allReviews.map((review) => (
             <Card key={review.id} className={`shadow-xl dark:shadow-mystical-500/10 bg-background dark:bg-card hover:shadow-2xl dark:hover:shadow-mystical-500/20 transition-all duration-300 ${'pending' in review && review.pending ? 'opacity-60 pointer-events-none' : ''}`}>

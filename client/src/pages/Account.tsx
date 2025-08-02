@@ -104,7 +104,7 @@ export default function Account() {
   }, [isAuthenticated, isLoading, toast, t, setLocation]);
 
   // Get user appointments with faster refresh settings
-  const { data: appointments = [] } = useQuery({
+  const { data: appointments = [], isLoading: appointmentsLoading } = useQuery({
     queryKey: ["/api/appointments/user"],
     enabled: isAuthenticated,
     staleTime: 10 * 1000, // 10 секунд - данные считаются свежими только 10 секунд
@@ -378,7 +378,25 @@ export default function Account() {
             </CardHeader>
             <CardContent>
               <div>
-                {(appointments as any[]).length === 0 ? (
+                {appointmentsLoading ? (
+                  <div className="space-y-4">
+                    {[...Array(3)].map((_, index) => (
+                      <div key={index} className="border rounded-lg p-4 animate-pulse">
+                        <div className="flex justify-between items-start mb-2">
+                          <div className="space-y-2">
+                            <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-32"></div>
+                            <div className="h-3 bg-gray-200 dark:bg-gray-700 rounded w-24"></div>
+                          </div>
+                          <div className="h-6 bg-gray-200 dark:bg-gray-700 rounded w-16"></div>
+                        </div>
+                        <div className="flex items-center gap-4">
+                          <div className="h-3 bg-gray-200 dark:bg-gray-700 rounded w-20"></div>
+                          <div className="h-3 bg-gray-200 dark:bg-gray-700 rounded w-16"></div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (appointments as any[]).length === 0 ? (
                   <div className="text-center py-12">
                     <Calendar className="h-12 w-12 text-mystical-400 mx-auto mb-4" />
                     <p className="text-mystical-500 dark:text-mystical-400 mb-4">
