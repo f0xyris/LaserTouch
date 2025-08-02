@@ -23,6 +23,22 @@
       "dest": "/api/health-check.ts"
     },
     {
+      "src": "/api/users",
+      "dest": "/api/users.ts"
+    },
+    {
+      "src": "/api/services",
+      "dest": "/api/services.ts"
+    },
+    {
+      "src": "/api/reviews/all",
+      "dest": "/api/reviews/all.ts"
+    },
+    {
+      "src": "/api/appointments",
+      "dest": "/api/appointments.ts"
+    },
+    {
       "src": "/api/test-login",
       "dest": "/api/test-login.ts"
     },

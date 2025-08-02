@@ -1,0 +1,216 @@
+import 'dotenv/config';
+import type { VercelRequest, VercelResponse } from '@vercel/node';
+import { Pool } from 'pg';
+import jwt from 'jsonwebtoken';
+
+interface JWTPayload {
+  userId: number;
+  email: string;
+  firstName?: string;
+  lastName?: string;
+  isAdmin: boolean;
+}
+
+function verifyToken(token: string): JWTPayload | null {
+  try {
+    const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key-change-in-production';
+    return jwt.verify(token, JWT_SECRET) as JWTPayload;
+  } catch (error) {
+    return null;
+  }
+}
+
+function extractTokenFromRequest(req: any): string | null {
+  const authHeader = req.headers.authorization;
+  if (authHeader && authHeader.startsWith('Bearer ')) {
+    return authHeader.substring(7);
+  }
+  return null;
+}
+
+export default async function handler(req: VercelRequest, res: VercelResponse) {
+  // Enable CORS
+  res.setHeader('Access-Control-Allow-Origin', 'https://laser-touch.vercel.app');
+  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+  res.setHeader('Access-Control-Allow-Credentials', 'true');
+  
+  if (req.method === 'OPTIONS') {
+    return res.status(200).end();
+  }
+  
+  if (!['GET', 'POST', 'PUT', 'DELETE'].includes(req.method)) {
+    return res.status(405).json({ error: 'Method not allowed' });
+  }
+
+  try {
+    console.log('Appointments endpoint called with method:', req.method);
+    
+    // Verify token
+    const token = extractTokenFromRequest(req);
+    if (!token) {
+      return res.status(401).json({ error: 'No token provided' });
+    }
+    
+    const payload = verifyToken(token);
+    if (!payload) {
+      return res.status(401).json({ error: 'Invalid token' });
+    }
+    
+    if (!process.env.DATABASE_URL) {
+      console.error('❌ DATABASE_URL not found');
+      return res.status(500).json({ error: 'Database configuration missing' });
+    }
+    
+    const pool = new Pool({
+      connectionString: process.env.DATABASE_URL,
+      ssl: { rejectUnauthorized: false }
+    });
+    
+    const client = await pool.connect();
+    console.log('Database connected successfully');
+    
+    try {
+      if (req.method === 'GET') {
+        console.log('Executing appointments query...');
+        
+        let query = `
+          SELECT 
+            a.id, 
+            a.user_id, 
+            a.service_id, 
+            a.appointment_date, 
+            a.appointment_time, 
+            a.status, 
+            a.notes, 
+            a.created_at, 
+            a.updated_at,
+            u.first_name as user_first_name,
+            u.last_name as user_last_name,
+            u.email as user_email,
+            s.name_ua as service_name_ua,
+            s.name_en as service_name_en,
+            s.name_ru as service_name_ru
+          FROM appointments a
+          LEFT JOIN users u ON a.user_id = u.id
+          LEFT JOIN services s ON a.service_id = s.id
+        `;
+        
+        const queryParams = [];
+        
+        // If not admin, only show user's own appointments
+        if (!payload.isAdmin) {
+          query += ' WHERE a.user_id = $1';
+          queryParams.push(payload.userId);
+        }
+        
+        query += ' ORDER BY a.appointment_date DESC, a.appointment_time DESC';
+        
+        const appointmentsResult = await client.query(query, queryParams);
+        
+        console.log('Appointments query result:', appointmentsResult.rows.length, 'appointments found');
+        
+        const appointments = appointmentsResult.rows.map(appointment => ({
+          id: appointment.id,
+          userId: appointment.user_id,
+          serviceId: appointment.service_id,
+          appointmentDate: appointment.appointment_date,
+          appointmentTime: appointment.appointment_time,
+          status: appointment.status,
+          notes: appointment.notes,
+          createdAt: appointment.created_at,
+          updatedAt: appointment.updated_at,
+          user: {
+            firstName: appointment.user_first_name,
+            lastName: appointment.user_last_name,
+            email: appointment.user_email
+          },
+          service: {
+            name: {
+              ua: appointment.service_name_ua,
+              en: appointment.service_name_en,
+              ru: appointment.service_name_ru
+            }
+          }
+        }));
+        
+        res.status(200).json(appointments);
+      } else if (req.method === 'POST') {
+        // Create new appointment
+        const { serviceId, appointmentDate, appointmentTime, notes } = req.body;
+        
+        const result = await client.query(`
+          INSERT INTO appointments (user_id, service_id, appointment_date, appointment_time, status, notes, created_at, updated_at)
+          VALUES ($1, $2, $3, $4, $5, $6, NOW(), NOW())
+          RETURNING id
+        `, [
+          payload.userId,
+          serviceId,
+          appointmentDate,
+          appointmentTime,
+          'pending',
+          notes || ''
+        ]);
+        
+        res.status(201).json({ id: result.rows[0].id });
+      } else if (req.method === 'PUT') {
+        // Update appointment
+        const { id, status, notes } = req.body;
+        
+        let query = 'UPDATE appointments SET updated_at = NOW()';
+        const queryParams = [];
+        let paramIndex = 1;
+        
+        if (status !== undefined) {
+          query += `, status = $${paramIndex++}`;
+          queryParams.push(status);
+        }
+        
+        if (notes !== undefined) {
+          query += `, notes = $${paramIndex++}`;
+          queryParams.push(notes);
+        }
+        
+        query += ` WHERE id = $${paramIndex}`;
+        queryParams.push(id);
+        
+        // If not admin, only allow updating own appointments
+        if (!payload.isAdmin) {
+          query += ` AND user_id = $${paramIndex + 1}`;
+          queryParams.push(payload.userId);
+        }
+        
+        await client.query(query, queryParams);
+        
+        res.status(200).json({ success: true });
+      } else if (req.method === 'DELETE') {
+        // Delete appointment
+        const { id } = req.query;
+        
+        let query = 'DELETE FROM appointments WHERE id = $1';
+        const queryParams = [id];
+        
+        // If not admin, only allow deleting own appointments
+        if (!payload.isAdmin) {
+          query += ' AND user_id = $2';
+          queryParams.push(payload.userId);
+        }
+        
+        await client.query(query, queryParams);
+        
+        res.status(200).json({ success: true });
+      }
+      
+    } finally {
+      client.release();
+      await pool.end();
+    }
+    
+  } catch (error) {
+    console.error('❌ Appointments error:', error);
+    res.status(500).json({ 
+      error: 'Internal server error',
+      details: process.env.NODE_ENV === 'development' ? error.message : undefined
+    });
+  }
+} 
