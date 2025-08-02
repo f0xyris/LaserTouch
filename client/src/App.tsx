@@ -9,6 +9,8 @@ import Footer from "@/components/Footer";
 import { ResourcePreloader } from "@/components/ResourcePreloader";
 import { PerformanceMonitor } from "@/components/PerformanceMonitor";
 import { useCacheRefresh } from "@/hooks/useCache";
+import { useDataPreloader } from "@/hooks/useDataPreloader";
+import { AppPreloader } from "@/components/LoadingSpinner";
 import Home from "@/pages/Home";
 import Booking from "@/pages/Booking";
 import Training from "@/pages/Training";
@@ -40,6 +42,9 @@ function Router() {
 function AppContent() {
   // Initialize cache refresh functionality
   useCacheRefresh();
+  
+  // Use data preloader
+  const { isPreloading } = useDataPreloader();
 
   // Критические изображения для предзагрузки
   const criticalImages = [
@@ -51,11 +56,17 @@ function AppContent() {
     <LanguageProvider>
       <TooltipProvider>
         <ResourcePreloader images={criticalImages} />
-        <div className="min-h-screen bg-background">
+        
+        {/* Show preloader while data is loading */}
+        <AppPreloader isVisible={isPreloading} />
+        
+        {/* Main app content */}
+        <div className={`min-h-screen bg-background ${isPreloading ? 'hidden' : ''}`}>
           <Navigation />
           <Router />
           <Footer />
         </div>
+        
         <Toaster />
         <PerformanceMonitor />
       </TooltipProvider>

@@ -714,3 +714,52 @@ input, textarea {
 .select-open:focus + .chevron {
   transform: rotate(180deg) !important;
 }
+
+/* Laser scan animation for preloader */
+@keyframes laserScan {
+  0% {
+    transform: translateX(-100%);
+    opacity: 0;
+  }
+  20% {
+    opacity: 1;
+  }
+  80% {
+    opacity: 1;
+  }
+  100% {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+}
+
+.laser-scan-animation {
+  animation: laserScan 3s ease-in-out infinite;
+}
+
+/* Preloader fade transitions */
+.preloader-fade-in {
+  animation: fadeIn 0.5s ease-in-out;
+}
+
+.preloader-fade-out {
+  animation: fadeOut 0.5s ease-in-out;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes fadeOut {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
+  }
+}

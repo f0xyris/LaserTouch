@@ -220,4 +220,69 @@ export const TransitionLoader = ({ isVisible }: { isVisible: boolean }) => {
   );
 };
 
+// Laser Body Contour Preloader
+export const LaserBodyPreloader: React.FC<{ className?: string }> = ({ className }) => {
+  return (
+    <div className={cn("fixed inset-0 bg-white dark:bg-deep-900 flex items-center justify-center z-50", className)}>
+      <div className="relative w-64 h-96">
+        {/* Body contour */}
+        <svg className="w-full h-full" viewBox="0 0 256 384" fill="none">
+          <defs>
+            <linearGradient id="laserGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+              <stop offset="0%" stopColor="#8B5CF6" stopOpacity="0.3" />
+              <stop offset="50%" stopColor="#EC4899" stopOpacity="1" />
+              <stop offset="100%" stopColor="#8B5CF6" stopOpacity="0.3" />
+            </linearGradient>
+            <mask id="bodyMask">
+              <path
+                d="M128 20 C 80 20, 60 40, 60 80 C 60 120, 80 140, 128 140 C 176 140, 196 120, 196 80 C 196 40, 176 20, 128 20 Z M 80 140 L 80 200 C 80 220, 100 240, 128 240 C 156 240, 176 220, 176 200 L 176 140 M 128 240 L 128 320 C 128 340, 108 360, 88 360 C 68 360, 48 340, 48 320 L 48 280 M 128 240 L 128 320 C 128 340, 148 360, 168 360 C 188 360, 208 340, 208 320 L 208 280"
+                fill="white"
+                stroke="white"
+                strokeWidth="2"
+              />
+            </mask>
+          </defs>
+          
+          {/* Body outline */}
+          <path
+            d="M128 20 C 80 20, 60 40, 60 80 C 60 120, 80 140, 128 140 C 176 140, 196 120, 196 80 C 196 40, 176 20, 128 20 Z M 80 140 L 80 200 C 80 220, 100 240, 128 240 C 156 240, 176 220, 176 200 L 176 140 M 128 240 L 128 320 C 128 340, 108 360, 88 360 C 68 360, 48 340, 48 320 L 48 280 M 128 240 L 128 320 C 128 340, 148 360, 168 360 C 188 360, 208 340, 208 320 L 208 280"
+            stroke="#E5E7EB"
+            strokeWidth="3"
+            fill="none"
+            className="dark:stroke-gray-600"
+          />
+          
+          {/* Animated laser light */}
+          <rect
+            x="0"
+            y="0"
+            width="256"
+            height="384"
+            fill="url(#laserGradient)"
+            mask="url(#bodyMask)"
+            className="laser-scan-animation"
+          />
+        </svg>
+        
+        {/* Loading text */}
+        <div className="absolute bottom-0 left-1/2 transform -translate-x-1/2 text-center">
+          <h2 className="text-2xl font-bold text-mystical-700 dark:text-mystical-300 mb-2">
+            LaserTouch
+          </h2>
+          <p className="text-mystical-600 dark:text-mystical-400 text-sm">
+            Initializing your beauty experience...
+          </p>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// Main app preloader that shows until all critical data is loaded
+export const AppPreloader: React.FC<{ isVisible: boolean }> = ({ isVisible }) => {
+  if (!isVisible) return null;
+  
+  return <LaserBodyPreloader />;
+};
+
 export default LoadingSpinner;
