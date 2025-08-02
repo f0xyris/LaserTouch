@@ -47,22 +47,18 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     console.log('Reviews endpoint called');
     console.log('Request headers:', req.headers);
     
-    // Verify admin token
+    // Check if user is admin (optional)
     const token = extractTokenFromRequest(req);
     console.log('Token extracted:', token ? 'Yes' : 'No');
     
-    if (!token) {
-      console.log('No token provided');
-      return res.status(401).json({ error: 'No token provided' });
+    let isAdmin = false;
+    if (token) {
+      const payload = verifyToken(token);
+      console.log('Token payload:', payload);
+      isAdmin = payload?.isAdmin || false;
     }
     
-    const payload = verifyToken(token);
-    console.log('Token payload:', payload);
-    
-    if (!payload || !payload.isAdmin) {
-      console.log('Admin access required, payload:', payload);
-      return res.status(403).json({ error: 'Admin access required' });
-    }
+    console.log('Is admin:', isAdmin);
     
     if (!process.env.DATABASE_URL) {
       console.error('❌ DATABASE_URL not found');
@@ -141,8 +137,14 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       
       query += `
         FROM reviews 
-        ORDER BY id DESC
       `;
+      
+      // Add WHERE clause for non-admin users (only show approved reviews)
+      if (!isAdmin) {
+        query += ` WHERE status = 'approved' OR is_approved = true`;
+      }
+      
+      query += ` ORDER BY id DESC`;
       
       const reviewsResult = await client.query(query);
       

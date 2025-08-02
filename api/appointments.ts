@@ -220,14 +220,18 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         res.status(200).json(appointments);
       } else if (req.method === 'POST') {
         // Create new appointment
-        const { serviceId, appointmentDate, appointmentTime, notes } = req.body;
+        const { userId, serviceId, appointmentDate, appointmentTime, notes } = req.body;
+        
+        // If admin is creating appointment for another user, use that userId
+        // Otherwise, use the current user's ID
+        const targetUserId = (payload.isAdmin && userId) ? userId : payload.userId;
         
                  const result = await client.query(`
            INSERT INTO appointments (user_id, service_id, appointment_date, appointment_time, status, notes, created_at, updated_at)
            VALUES ($1, $2, $3, $4, $5, $6, NOW(), NOW())
            RETURNING id
          `, [
-           payload.userId.toString(),
+           targetUserId.toString(),
            serviceId,
            appointmentDate,
            appointmentTime,
