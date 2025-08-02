@@ -17,6 +17,7 @@ import Account from "@/pages/Account";
 import Admin from "@/pages/Admin";
 import CourseCheckout from "@/pages/CourseCheckout";
 import Login from "@/pages/Login";
+import TestLogin from "@/pages/TestLogin";
 import NotFound from "@/pages/not-found";
 
 function Router() {
@@ -30,6 +31,7 @@ function Router() {
       <Route path="/admin" component={Admin} />
       <Route path="/checkout/course/:id" component={CourseCheckout} />
       <Route path="/login" component={Login} />
+      <Route path="/test-login" component={TestLogin} />
       <Route component={NotFound} />
     </Switch>
   );

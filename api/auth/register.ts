@@ -2,13 +2,14 @@ import 'dotenv/config';
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { Pool } from 'pg';
 import bcrypt from 'bcryptjs';
-import { generateToken } from '../utils/jwt';
+import { generateToken } from '../../shared/jwt';
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   // Enable CORS
-  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Origin', 'https://laser-touch.vercel.app');
   res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+  res.setHeader('Access-Control-Allow-Credentials', 'true');
   
   if (req.method === 'OPTIONS') {
     return res.status(200).end();
@@ -63,14 +64,20 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
       // Insert new user
       const insertResult = await client.query(
-        'INSERT INTO users (email, password_hash, first_name, last_name, phone, created_at) VALUES ($1, $2, $3, $4, $5, NOW()) RETURNING id, email, first_name, last_name, is_admin',
+        'INSERT INTO users (email, password, first_name, last_name, phone, created_at) VALUES ($1, $2, $3, $4, $5, NOW()) RETURNING id, email, first_name, last_name, is_admin',
         [email.toLowerCase(), passwordHash, firstName, lastName, phone]
       );
 
       const newUser = insertResult.rows[0];
 
       // Generate JWT token
-      const token = generateToken(newUser.id);
+      const token = generateToken({
+        userId: newUser.id,
+        email: newUser.email,
+        firstName: newUser.first_name,
+        lastName: newUser.last_name,
+        isAdmin: newUser.is_admin
+      });
 
       // Return user data and token
       const responseData = {
