@@ -139,7 +139,22 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
            query += `, a.appointment_time`;
          }
          
-         query += `, a.status, a.notes, a.created_at, a.updated_at,
+         // Add other columns that might exist
+         if (appointmentsColumns.includes('status')) {
+           query += `, a.status`;
+         }
+         if (appointmentsColumns.includes('notes')) {
+           query += `, a.notes`;
+         }
+         if (appointmentsColumns.includes('created_at')) {
+           query += `, a.created_at`;
+         }
+         if (appointmentsColumns.includes('updated_at')) {
+           query += `, a.updated_at`;
+         }
+         
+         // Add user info if users table exists
+         query += `,
              u.first_name as user_first_name,
              u.last_name as user_last_name,
              u.email as user_email
