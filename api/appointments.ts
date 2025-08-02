@@ -145,12 +145,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
          if (appointmentsColumns.includes('notes')) {
            query += `, a.notes`;
          }
-         if (appointmentsColumns.includes('created_at')) {
-           query += `, a.created_at`;
-         }
-         if (appointmentsColumns.includes('updated_at')) {
-           query += `, a.updated_at`;
-         }
+                   if (appointmentsColumns.includes('created_at')) {
+            query += `, a.created_at`;
+          }
          
          // Add user info if users table exists
          query += `,
@@ -197,9 +194,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
            appointmentDate: appointment.appointment_date,
                        appointmentTime: null, // No separate appointment_time column
            status: appointment.status,
-           notes: appointment.notes,
-           createdAt: appointment.created_at,
-           updatedAt: appointment.updated_at,
+                       notes: appointment.notes,
+            createdAt: appointment.created_at,
            user: {
              firstName: appointment.user_first_name,
              lastName: appointment.user_last_name,
@@ -241,8 +237,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         console.log('Target user ID:', targetUserId);
         
                          const result = await client.query(`
-          INSERT INTO appointments (user_id, service_id, appointment_date, status, notes, created_at, updated_at)
-          VALUES ($1, $2, $3, $4, $5, NOW(), NOW())
+          INSERT INTO appointments (user_id, service_id, appointment_date, status, notes, created_at)
+          VALUES ($1, $2, $3, $4, $5, NOW())
           RETURNING id
         `, [
           targetUserId.toString(),
@@ -258,18 +254,27 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         // Update appointment
         const { id, status, notes } = req.body;
         
-        let query = 'UPDATE appointments SET updated_at = NOW()';
+        let query = 'UPDATE appointments SET';
         const queryParams = [];
         let paramIndex = 1;
+        let hasUpdates = false;
         
         if (status !== undefined) {
-          query += `, status = $${paramIndex++}`;
+          if (hasUpdates) query += ',';
+          query += ` status = $${paramIndex++}`;
           queryParams.push(status);
+          hasUpdates = true;
         }
         
         if (notes !== undefined) {
-          query += `, notes = $${paramIndex++}`;
+          if (hasUpdates) query += ',';
+          query += ` notes = $${paramIndex++}`;
           queryParams.push(notes);
+          hasUpdates = true;
+        }
+        
+        if (!hasUpdates) {
+          return res.status(400).json({ error: 'No fields to update' });
         }
         
         query += ` WHERE id = $${paramIndex}`;
