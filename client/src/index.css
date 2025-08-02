@@ -744,16 +744,16 @@ input, textarea {
     transform: translate(0px, 0px);
   }
   5% {
-    transform: translate(-40px, 0px);
+    transform: translate(-35px, 0px);
   }
   10% {
-    transform: translate(-60px, 20px);
+    transform: translate(-60px, 15px);
   }
   15% {
     transform: translate(-60px, 40px);
   }
   20% {
-    transform: translate(-60px, 60px);
+    transform: translate(-60px, 65px);
   }
   25% {
     transform: translate(-40px, 80px);
@@ -771,16 +771,16 @@ input, textarea {
     transform: translate(40px, 80px);
   }
   50% {
-    transform: translate(60px, 60px);
+    transform: translate(60px, 65px);
   }
   55% {
     transform: translate(60px, 40px);
   }
   60% {
-    transform: translate(60px, 20px);
+    transform: translate(60px, 15px);
   }
   65% {
-    transform: translate(40px, 0px);
+    transform: translate(35px, 0px);
   }
   70% {
     transform: translate(20px, 0px);
@@ -789,16 +789,16 @@ input, textarea {
     transform: translate(0px, 0px);
   }
   80% {
-    transform: translate(-40px, 0px);
+    transform: translate(-35px, 0px);
   }
   85% {
-    transform: translate(-40px, 20px);
+    transform: translate(-40px, 10px);
   }
   90% {
-    transform: translate(-40px, 40px);
+    transform: translate(-40px, 20px);
   }
   95% {
-    transform: translate(-20px, 60px);
+    transform: translate(-20px, 30px);
   }
   100% {
     transform: translate(0px, 0px);
@@ -807,7 +807,7 @@ input, textarea {
 
 @keyframes laserPathDraw {
   0% {
-    stroke-dashoffset: 1200;
+    stroke-dashoffset: 900;
   }
   100% {
     stroke-dashoffset: 0;
@@ -821,8 +821,8 @@ input, textarea {
 
 .laser-path-animation {
   animation: laserPathDraw 8s ease-in-out infinite;
-  stroke-dasharray: 1200;
-  stroke-dashoffset: 1200;
+  stroke-dasharray: 900;
+  stroke-dashoffset: 900;
 }
 
 /* Preloader fade transitions */

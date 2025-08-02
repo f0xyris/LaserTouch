@@ -225,7 +225,7 @@ export const LaserBodyPreloader: React.FC<{ className?: string }> = ({ className
   return (
     <div className={cn("fixed inset-0 bg-white dark:bg-deep-900 flex items-center justify-center z-50", className)}>
       <div className="relative w-80 h-96">
-        {/* Elegant female body silhouette */}
+        {/* Elegant feminine body silhouette */}
         <svg className="w-full h-full" viewBox="0 0 320 384" fill="none">
           <defs>
             {/* Laser beam gradient */}
@@ -245,9 +245,9 @@ export const LaserBodyPreloader: React.FC<{ className?: string }> = ({ className
             </radialGradient>
           </defs>
           
-          {/* Body outline - elegant thin lines */}
+          {/* Feminine body outline with graceful curves and defined waist */}
           <path
-            d="M160 30 C 120 30, 100 50, 100 90 C 100 130, 120 150, 160 150 C 200 150, 220 130, 220 90 C 220 50, 200 30, 160 30 Z M 120 150 L 120 210 C 120 230, 140 250, 160 250 C 180 250, 200 230, 200 210 L 200 150 M 160 250 L 160 330 C 160 350, 140 370, 120 370 C 100 370, 80 350, 80 330 L 80 290 M 160 250 L 160 330 C 160 350, 180 370, 200 370 C 220 370, 240 350, 240 330 L 240 290"
+            d="M160 20 C 125 20, 100 35, 100 60 C 100 85, 125 100, 160 100 C 195 100, 220 85, 220 60 C 220 35, 195 20, 160 20 Z M 120 100 L 120 130 C 120 140, 130 150, 160 150 C 190 150, 200 140, 200 130 L 200 100 M 160 150 L 160 180 C 160 190, 150 200, 140 200 C 130 200, 120 190, 120 180 L 120 160 M 160 150 L 160 180 C 160 190, 170 200, 180 200 C 190 200, 200 190, 200 180 L 200 160 M 140 150 C 140 150, 135 155, 135 160 C 135 165, 140 170, 145 170 C 150 170, 155 165, 155 160 C 155 155, 150 150, 145 150 Z M 160 150 L 160 180 C 160 190, 150 200, 140 200 C 130 200, 120 190, 120 180 L 120 160 M 160 150 L 160 180 C 160 190, 170 200, 180 200 C 190 200, 200 190, 200 180 L 200 160 M 165 150 C 165 150, 170 155, 170 160 C 170 165, 165 170, 160 170 C 155 170, 150 165, 150 160 C 150 155, 155 150, 160 150 Z"
             stroke="#E5E7EB"
             strokeWidth="2"
             fill="none"
@@ -257,7 +257,7 @@ export const LaserBodyPreloader: React.FC<{ className?: string }> = ({ className
           {/* Animated laser dot that follows the silhouette */}
           <circle
             cx="160"
-            cy="30"
+            cy="20"
             r="3"
             fill="url(#laserDot)"
             className="laser-dot-animation"
@@ -265,7 +265,7 @@ export const LaserBodyPreloader: React.FC<{ className?: string }> = ({ className
           
           {/* Laser beam effect that follows the path */}
           <path
-            d="M160 30 C 120 30, 100 50, 100 90 C 100 130, 120 150, 160 150 C 200 150, 220 130, 220 90 C 220 50, 200 30, 160 30 Z M 120 150 L 120 210 C 120 230, 140 250, 160 250 C 180 250, 200 230, 200 210 L 200 150 M 160 250 L 160 330 C 160 350, 140 370, 120 370 C 100 370, 80 350, 80 330 L 80 290 M 160 250 L 160 330 C 160 350, 180 370, 200 370 C 220 370, 240 350, 240 330 L 240 290"
+            d="M160 20 C 125 20, 100 35, 100 60 C 100 85, 125 100, 160 100 C 195 100, 220 85, 220 60 C 220 35, 195 20, 160 20 Z M 120 100 L 120 130 C 120 140, 130 150, 160 150 C 190 150, 200 140, 200 130 L 200 100 M 160 150 L 160 180 C 160 190, 150 200, 140 200 C 130 200, 120 190, 120 180 L 120 160 M 160 150 L 160 180 C 160 190, 170 200, 180 200 C 190 200, 200 190, 200 180 L 200 160 M 140 150 C 140 150, 135 155, 135 160 C 135 165, 140 170, 145 170 C 150 170, 155 165, 155 160 C 155 155, 150 150, 145 150 Z M 160 150 L 160 180 C 160 190, 150 200, 140 200 C 130 200, 120 190, 120 180 L 120 160 M 160 150 L 160 180 C 160 190, 170 200, 180 200 C 190 200, 200 190, 200 180 L 200 160 M 165 150 C 165 150, 170 155, 170 160 C 170 165, 165 170, 160 170 C 155 170, 150 165, 150 160 C 150 155, 155 150, 160 150 Z"
             stroke="url(#laserBeam)"
             strokeWidth="2"
             fill="none"
