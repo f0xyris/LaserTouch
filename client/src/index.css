@@ -104,6 +104,13 @@
   .text-elegant {
     @apply font-inter font-normal leading-relaxed;
   }
+  
+  /* Better text rendering */
+  * {
+    text-rendering: optimizeLegibility;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
 }
 
 @layer utilities {
@@ -851,3 +858,5 @@ input, textarea {
     opacity: 0;
   }
 }
+
+

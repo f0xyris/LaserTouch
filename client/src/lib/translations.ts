@@ -1119,7 +1119,7 @@ export const translations: Record<Language, Translations> = {
     slide1Description: "Передова лазерна технологія для постійного видалення волосся з мінімальним дискомфортом",
     slide2Title: "Розслаблююча масажна терапія",
     slide2Subtitle: "Омолодіть своє тіло та розум",
-    slide2Description: "Profesjonalne techniki masażu dla здоров'я, добра самопочуття та глибокого розслаблення",
+    slide2Description: "Професійні техніки масажу для здоров'я, доброго самопочуття та глибокого розслаблення",
     slide3Title: "Розкішні спа-послуги",
     slide3Subtitle: "Насолоджуйтесь преміальними процедурами",
     slide3Description: "Повний спа-досвід з доглядом за обличчям та процедурами для тіла",

@@ -16,7 +16,7 @@ interface ImageSliderProps {
   onSlideChange: (index: number) => void;
 }
 
-// Компонент для предзагрузки изображений
+// Простой компонент для предзагрузки изображений
 const ImagePreloader = ({ slides }: { slides: Slide[] }) => {
   useEffect(() => {
     slides.forEach(slide => {
@@ -92,15 +92,16 @@ export const ImageSlider = ({ slides, interval = 5000, currentSlide, onSlideChan
     return slides.map((slide, index) => (
       <div
         key={index}
-        className={`absolute inset-0 w-full h-full bg-cover bg-center transition-opacity duration-1000 ${
+        className={`absolute inset-0 w-full h-full transition-opacity duration-1000 ${
           index === currentIndex ? "opacity-100" : "opacity-0"
         }`}
-        style={{
-          backgroundImage: `url(${slide.image})`,
-          backgroundSize: 'cover',
-          backgroundPosition: 'center',
-        }}
-      />
+      >
+        <img
+          src={slide.image}
+          alt={slide.title}
+          className="w-full h-full object-cover object-center"
+        />
+      </div>
     ));
   }, [slides, currentIndex]);
 

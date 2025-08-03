@@ -29,13 +29,6 @@ function extractTokenFromRequest(req: any): string | null {
 }
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
-  // PRODUCTION DEBUGGING: Comprehensive logging for troubleshooting Vercel deployment issues
-  console.log('=== APPOINTMENTS API CALLED ===');
-  console.log('Method:', req.method);
-  console.log('URL:', req.url);
-  console.log('Headers:', req.headers);
-  console.log('Query:', req.query);
-  console.log('Body:', req.body);
 
   // CORS FIX: Expanded allowed origins to include Vercel preview deployments and local development
   const allowedOrigins = [
@@ -55,41 +48,28 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   res.setHeader('Access-Control-Allow-Credentials', 'true');
   
   if (req.method === 'OPTIONS') {
-    console.log('OPTIONS request - returning 200');
     return res.status(200).end();
   }
   
   if (!['GET', 'POST', 'PUT', 'DELETE'].includes(req.method)) {
-    console.log('Method not allowed:', req.method);
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
   try {
-    console.log('Appointments endpoint called with method:', req.method);
-    console.log('Request headers:', req.headers);
-    console.log('Request body:', req.body);
-    console.log('Request query:', req.query);
-    console.log('Request URL:', req.url);
-    
     // Verify token
     const token = extractTokenFromRequest(req);
-    console.log('Token extracted:', token ? 'Yes' : 'No');
     
     if (!token) {
-      console.log('No token provided');
       return res.status(401).json({ error: 'No token provided' });
     }
     
     const payload = verifyToken(token);
-    console.log('Token payload:', payload);
     
     if (!payload) {
-      console.log('Invalid token');
       return res.status(401).json({ error: 'Invalid token' });
     }
     
     if (!process.env.DATABASE_URL) {
-      console.error('❌ DATABASE_URL not found');
       return res.status(500).json({ error: 'Database configuration missing' });
     }
     
@@ -99,29 +79,22 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     });
     
     const client = await pool.connect();
-    console.log('Database connected successfully');
     
     try {
       if (req.method === 'GET') {
-        console.log('Executing appointments query...');
-        
-                 // First, let's check if appointments table exists
-         console.log('Checking if appointments table exists...');
-         let appointmentsStructure;
-         try {
-           appointmentsStructure = await client.query(`
-             SELECT column_name, data_type 
-             FROM information_schema.columns 
-             WHERE table_name = 'appointments' 
-             ORDER BY ordinal_position
-           `);
-           
-           console.log('Appointments table columns:', appointmentsStructure.rows.map(row => `${row.column_name} (${row.data_type})`));
-           
-           if (appointmentsStructure.rows.length === 0) {
-             console.log('Appointments table does not exist, returning empty array');
-             return res.status(200).json([]);
-           }
+        // Check if appointments table exists
+        let appointmentsStructure;
+        try {
+          appointmentsStructure = await client.query(`
+            SELECT column_name, data_type 
+            FROM information_schema.columns 
+            WHERE table_name = 'appointments' 
+            ORDER BY ordinal_position
+          `);
+          
+          if (appointmentsStructure.rows.length === 0) {
+            return res.status(200).json([]);
+          }
          } catch (error) {
            console.log('Error checking appointments table structure:', error.message);
            console.log('Appointments table does not exist, returning empty array');

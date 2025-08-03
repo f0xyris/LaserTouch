@@ -19,7 +19,6 @@ import Account from "@/pages/Account";
 import Admin from "@/pages/Admin";
 import CourseCheckout from "@/pages/CourseCheckout";
 import Login from "@/pages/Login";
-import TestLogin from "@/pages/TestLogin";
 import NotFound from "@/pages/not-found";
 
 function Router() {
@@ -33,7 +32,7 @@ function Router() {
       <Route path="/admin" component={Admin} />
       <Route path="/checkout/course/:id" component={CourseCheckout} />
       <Route path="/login" component={Login} />
-      <Route path="/test-login" component={TestLogin} />
+
       <Route component={NotFound} />
     </Switch>
   );
@@ -46,6 +45,10 @@ function AppContent() {
   // Use data preloader
   const { isPreloading } = useDataPreloader();
 
+  // Check for force preloader parameter in URL
+  const urlParams = new URLSearchParams(window.location.search);
+  const forcePreloader = urlParams.get('preloader') === 'true';
+
   // Критические изображения для предзагрузки
   const criticalImages = [
     "https://images.unsplash.com/photo-1629909613654-28e377c37b09?ixlib=rb-4.0.3&auto=format&fit=crop&w=1200&h=800&q=70",
@@ -57,11 +60,11 @@ function AppContent() {
       <TooltipProvider>
         <ResourcePreloader images={criticalImages} />
         
-        {/* Show preloader while data is loading */}
-        <AppPreloader isVisible={isPreloading} />
+        {/* Show preloader while data is loading or if forced */}
+        <AppPreloader isVisible={isPreloading || forcePreloader} />
         
         {/* Main app content */}
-        <div className={`min-h-screen bg-background ${isPreloading ? 'hidden' : ''}`}>
+        <div className={`min-h-screen bg-background ${(isPreloading || forcePreloader) ? 'hidden' : ''}`}>
           <Navigation />
           <Router />
           <Footer />

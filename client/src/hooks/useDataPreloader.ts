@@ -4,7 +4,11 @@ import { useQueryClient } from '@tanstack/react-query';
 export const useDataPreloader = () => {
   const [isPreloading, setIsPreloading] = useState(true);
   const [preloadProgress, setPreloadProgress] = useState(0);
+  const [startTime] = useState(Date.now());
   const queryClient = useQueryClient();
+
+  // Минимальное время показа прелоадера (3 секунды)
+  const MIN_PRELOADER_TIME = 3000;
 
   useEffect(() => {
     const preloadCriticalData = async () => {
@@ -49,26 +53,35 @@ export const useDataPreloader = () => {
         });
         setPreloadProgress(90);
 
+        // Calculate remaining time to ensure minimum preloader display
+        const elapsedTime = Date.now() - startTime;
+        const remainingTime = Math.max(0, MIN_PRELOADER_TIME - elapsedTime);
+        
         // Small delay for smooth transition
         setTimeout(() => {
           setPreloadProgress(100);
           setTimeout(() => {
             setIsPreloading(false);
-          }, 500);
+          }, Math.max(500, remainingTime));
         }, 200);
         
       } catch (error) {
         console.error('Error preloading data:', error);
         // Continue even if preloading fails
         setPreloadProgress(100);
+        
+        // Calculate remaining time to ensure minimum preloader display
+        const elapsedTime = Date.now() - startTime;
+        const remainingTime = Math.max(0, MIN_PRELOADER_TIME - elapsedTime);
+        
         setTimeout(() => {
           setIsPreloading(false);
-        }, 500);
+        }, Math.max(500, remainingTime));
       }
     };
 
     preloadCriticalData();
-  }, [queryClient]);
+  }, [queryClient, startTime]);
 
   return {
     isPreloading,

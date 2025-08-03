@@ -1,1 +1,0 @@
-ALTER TABLE "appointments" ADD COLUMN "is_deleted_from_admin" boolean DEFAULT false;

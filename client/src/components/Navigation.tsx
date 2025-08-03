@@ -1,13 +1,14 @@
 import { useState, useMemo, useCallback } from "react";
 import { Link, useLocation } from "wouter";
 import { cn } from "@/lib/utils";
-import { Menu, X, Sparkles, User, LogOut } from "lucide-react";
+import { Menu, X, User, LogOut } from "lucide-react";
 import { ThemeToggle } from "./ThemeToggle";
 import { LanguageSelector } from "./LanguageSelector";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { LoadingSpinner } from "@/components/LoadingSpinner";
+import { Logo } from "./Logo";
 
 const Navigation = () => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -194,8 +195,7 @@ const Navigation = () => {
       <nav className="w-full px-3 sm:px-4 lg:px-6">
         <div className="flex justify-between items-center h-16">
           <Link href="/" className="flex items-center flex-shrink-0">
-            <Sparkles className="text-mystical-600 dark:text-mystical-400 text-xl sm:text-2xl mr-2" />
-            <span className="text-lg sm:text-xl font-playfair font-bold text-mystical-700 dark:text-mystical-400">LaserTouch</span>
+            <Logo size="md" />
           </Link>
           
           {/* Desktop Navigation */}
