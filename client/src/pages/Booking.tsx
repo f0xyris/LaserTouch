@@ -191,24 +191,26 @@ const Booking = () => {
   // Show login prompt if not authenticated
   if (!isAuthenticated) {
     return (
-      <main className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12 dark:bg-deep-900">
-        <div className="text-center mb-12">
-          <h1 className="text-3xl font-bold text-mystical-500 dark:text-mystical-400 mb-4">{t.bookingTitle}</h1>
-          <p className="text-muted-foreground dark:text-muted-foreground">{t.bookingDescription}</p>
-        </div>
+      <main className="min-h-[calc(100vh-64px)] flex items-center justify-center px-3 sm:px-4 lg:px-8 py-6 sm:py-12 dark:bg-deep-900">
+        <div className="max-w-4xl w-full">
+          <div className="text-center mb-8 sm:mb-12">
+            <h1 className="text-2xl sm:text-3xl font-bold text-mystical-500 dark:text-mystical-400 mb-2 sm:mb-4">{t.bookingTitle}</h1>
+            <p className="text-muted-foreground dark:text-muted-foreground text-sm sm:text-base">{t.bookingDescription}</p>
+          </div>
 
-        <Card className="shadow-xl dark:shadow-mystical-500/10 bg-background dark:bg-card">
-          <CardContent className="p-8 text-center">
-            <p className="text-lg text-muted-foreground mb-6">
-              {t.loginRequired || "Login required"}
-            </p>
-            <Link href="/login">
-              <Button className="bg-gradient-to-r from-mystical-500 to-accent-500 text-white px-8 py-3 hover:from-mystical-600 hover:to-accent-600 shadow-lg transform hover:scale-105 transition-all font-semibold">
-                {t.login || "Login"}
-              </Button>
-            </Link>
-          </CardContent>
-        </Card>
+          <Card className="shadow-xl dark:shadow-mystical-500/10 bg-background dark:bg-card">
+            <CardContent className="p-8 text-center">
+              <p className="text-lg text-muted-foreground mb-6">
+                {t.loginRequired || "Login required"}
+              </p>
+              <Link href="/login">
+                <Button className="bg-gradient-to-r from-mystical-500 to-accent-500 text-white px-8 py-3 hover:from-mystical-600 hover:to-accent-600 shadow-lg transform hover:scale-105 transition-all font-semibold">
+                  {t.login || "Login"}
+                </Button>
+              </Link>
+            </CardContent>
+          </Card>
+        </div>
       </main>
     );
   }
