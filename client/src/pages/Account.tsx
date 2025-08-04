@@ -149,7 +149,7 @@ export default function Account() {
   }
 
   return (
-    <div className="min-h-[calc(100vh-64px)] bg-gradient-to-br from-sage-50 to-sage-100 dark:from-sage-900 dark:to-sage-800 p-4 flex items-center justify-center">
+    <div className="min-h-[calc(100vh-64px)] bg-gradient-to-br from-sage-50 to-sage-100 dark:bg-deep-900 p-4 flex items-center justify-center">
       <div className="max-w-7xl w-full">
         <div className="text-center mb-8">
           <h1 className="text-4xl font-playfair font-bold text-mystical-600 dark:text-mystical-400 mb-2">

@@ -1,5 +1,6 @@
-import { Sparkles, MapPin, Phone, Mail, Clock, Instagram, MessageCircle } from "lucide-react";
+import { MapPin, Phone, Mail, Clock, Instagram, MessageCircle } from "lucide-react";
 import { useLanguage } from "@/contexts/LanguageContext";
+import { Logo } from "./Logo";
 
 const Footer = () => {
   const { t } = useLanguage();
@@ -10,8 +11,7 @@ const Footer = () => {
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-6 sm:gap-8">
           <div>
             <div className="flex items-center mb-4">
-              <Sparkles className="text-mystical-600 dark:text-mystical-400 text-2xl mr-3" />
-              <span className="text-xl font-bold text-gray-800 dark:text-white">LaserTouch</span>
+              <Logo size="lg" className="text-gray-800 dark:text-white" />
             </div>
             <p className="text-gray-600 dark:text-gray-300">
               {t.footerDescription}

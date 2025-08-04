@@ -130,7 +130,7 @@ export default function Login() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-sage-50 to-sage-100 dark:from-sage-900 dark:to-sage-800 p-4">
+    <div className="h-[calc(100vh-64px)] flex items-center justify-center bg-gradient-to-br from-sage-50 to-sage-100 dark:bg-deep-900 p-4">
       <div className="w-full max-w-6xl grid grid-cols-1 md:grid-cols-2 gap-8">
         {/* Left Side - Form */}
         <Card className="w-full max-w-md mx-auto">
@@ -174,11 +174,11 @@ export default function Login() {
                       <p className="text-sm text-red-600">{loginForm.formState.errors.password.message}</p>
                     )}
                   </div>
-                  <Button 
-                    type="submit" 
-                    className="w-full bg-sage-600 hover:bg-sage-700 text-white"
-                    disabled={loginMutation.isPending}
-                  >
+                                     <Button 
+                     type="submit" 
+                     className="w-full bg-sage-600 hover:bg-sage-700 text-white dark:hover:text-white"
+                     disabled={loginMutation.isPending}
+                   >
                     {loginMutation.isPending ? (
                       <LoadingSpinner size="sm" text={t.auth?.loggingIn || "Logging in..."} horizontal />
                     ) : (
@@ -277,11 +277,11 @@ export default function Login() {
                       <p className="text-sm text-red-600">{registerForm.formState.errors.password.message}</p>
                     )}
                   </div>
-                  <Button 
-                    type="submit" 
-                    className="w-full bg-sage-600 hover:bg-sage-700 text-white"
-                    disabled={registerMutation.isPending}
-                  >
+                                     <Button 
+                     type="submit" 
+                     className="w-full bg-sage-600 hover:bg-sage-700 text-white dark:hover:text-white"
+                     disabled={registerMutation.isPending}
+                   >
                     {registerMutation.isPending ? (
                       <LoadingSpinner size="sm" text={t.auth?.registering || "Registering..."} horizontal />
                     ) : (

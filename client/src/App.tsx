@@ -1,4 +1,4 @@
-import { Switch, Route } from "wouter";
+import { Switch, Route, useLocation } from "wouter";
 import { queryClient } from "./lib/queryClient";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
@@ -45,6 +45,9 @@ function AppContent() {
   // Use data preloader
   const { isPreloading } = useDataPreloader();
 
+  // Get current location to conditionally render footer
+  const [location] = useLocation();
+
   // Check for force preloader parameter in URL
   const urlParams = new URLSearchParams(window.location.search);
   const forcePreloader = urlParams.get('preloader') === 'true';
@@ -67,7 +70,7 @@ function AppContent() {
         <div className={`min-h-screen bg-background ${(isPreloading || forcePreloader) ? 'hidden' : ''}`}>
           <Navigation />
           <Router />
-          <Footer />
+          {location !== '/login' && <Footer />}
         </div>
         
         <Toaster />

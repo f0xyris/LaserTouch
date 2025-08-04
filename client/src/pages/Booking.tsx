@@ -191,7 +191,7 @@ const Booking = () => {
   // Show login prompt if not authenticated
   if (!isAuthenticated) {
     return (
-      <main className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+      <main className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12 dark:bg-deep-900">
         <div className="text-center mb-12">
           <h1 className="text-3xl font-bold text-mystical-500 dark:text-mystical-400 mb-4">{t.bookingTitle}</h1>
           <p className="text-muted-foreground dark:text-muted-foreground">{t.bookingDescription}</p>
@@ -214,7 +214,7 @@ const Booking = () => {
   }
 
   return (
-    <main className="min-h-[calc(100vh-64px)] flex items-center justify-center px-3 sm:px-4 lg:px-8 py-6 sm:py-12">
+    <main className="min-h-[calc(100vh-64px)] flex items-center justify-center px-3 sm:px-4 lg:px-8 py-6 sm:py-12 dark:bg-deep-900">
       <div className="max-w-4xl w-full">
         <div className="text-center mb-8 sm:mb-12">
           <h1 className="text-2xl sm:text-3xl font-bold text-mystical-500 dark:text-mystical-400 mb-2 sm:mb-4">{t.bookingTitle}</h1>

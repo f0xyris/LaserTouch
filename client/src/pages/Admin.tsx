@@ -768,7 +768,7 @@ const Admin = () => {
   }
 
   return (
-    <main className="admin-page min-h-[calc(100vh-64px)] flex items-center justify-center px-2 sm:px-4 lg:px-8 py-4 sm:py-8">
+    <main className="admin-page min-h-[calc(100vh-64px)] flex items-center justify-center px-2 sm:px-4 lg:px-8 py-4 sm:py-8 dark:bg-deep-900">
       <div className="max-w-7xl w-full">
         <div className="text-center mb-6 sm:mb-10">
           <h1 className="text-xl sm:text-3xl font-bold text-mystical-500 dark:text-mystical-400 mb-2 sm:mb-4">

@@ -129,14 +129,14 @@ const Reviews = () => {
   };
 
   return (
-    <main className="min-h-[calc(100vh-64px)] flex items-center justify-center px-3 sm:px-4 lg:px-8 py-6 sm:py-12">
+    <main className="min-h-[calc(100vh-64px)] flex items-center justify-center px-3 sm:px-4 lg:px-8 py-6 sm:py-12 dark:bg-deep-900">
       <div className="max-w-6xl w-full">
         <div className="text-center mb-8 sm:mb-12">
           <h1 className="text-2xl sm:text-3xl font-bold text-mystical-500 dark:text-mystical-400 mb-2 sm:mb-4">{t.reviewsTitle}</h1>
           <p className="text-muted-foreground dark:text-muted-foreground text-sm sm:text-base">{t.reviewsDescription}</p>
         </div>
       {/* Форма для нового отзыва */}
-      <section className="mb-10 bg-background dark:bg-card rounded-lg shadow-xl border border-muted-foreground/10 p-0">
+      <section className="mb-10 bg-background dark:bg-deep-900 rounded-lg shadow-xl border border-muted-foreground/10 p-0">
         <div className="p-4 sm:p-6">
           <h2 className="text-xl font-semibold text-mystical-600 dark:text-mystical-300 mb-2">{t.reviewFormTitle}</h2>
           <p className="text-muted-foreground mb-4 text-sm">{t.reviewFormDescription}</p>

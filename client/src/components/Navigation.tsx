@@ -97,7 +97,7 @@ const Navigation = () => {
             </Button>
           ) : (
             <Link href="/login">
-              <Button variant="ghost" size="sm" className="text-gray-600 dark:text-gray-400 hover:text-mystical-600 dark:hover:text-mystical-400 p-2">
+              <Button variant="ghost" size="sm" className="h-9 w-9 rounded-full transition-all hover:bg-mystical-100 dark:hover:bg-deep-700 dark:bg-deep-800 dark:text-mystical-300 dark:border dark:border-deep-600 flex items-center justify-center">
                 <User className="h-4 w-4" />
               </Button>
             </Link>
@@ -139,9 +139,8 @@ const Navigation = () => {
             </div>
           ) : (
             <Link href="/login">
-              <Button variant="ghost" size="sm" className="text-gray-600 dark:text-gray-400 hover:text-mystical-600 dark:hover:text-mystical-400">
-                <User className="h-4 w-4 mr-1" />
-                {t.login || "Вход"}
+              <Button variant="ghost" size="sm" className="h-9 w-9 rounded-full transition-all hover:bg-mystical-100 dark:hover:bg-deep-700 dark:bg-deep-800 dark:text-mystical-300 dark:border dark:border-deep-600 flex items-center justify-center">
+                <User className="h-4 w-4" />
               </Button>
             </Link>
           )}
