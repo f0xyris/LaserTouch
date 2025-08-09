@@ -47,6 +47,14 @@
       "dest": "/api/courses.ts"
     },
     {
+      "src": "/api/create-payment-intent",
+      "dest": "/api/courses.ts"
+    },
+    {
+      "src": "/api/webhook/stripe",
+      "dest": "/api/courses.ts"
+    },
+    {
       "src": "/api/auth/login",
       "dest": "/api/auth/login.ts"
     },
@@ -65,14 +73,6 @@
     {
       "src": "/api/auth/google/callback",
       "dest": "/api/auth/google/callback.ts"
-    },
-    {
-      "src": "/api/create-payment-intent",
-      "dest": "/api/create-payment-intent.ts"
-    },
-    {
-      "src": "/api/webhook/stripe",
-      "dest": "/api/webhook/stripe.ts"
     },
     {
       "src": "/api/(.*)",
