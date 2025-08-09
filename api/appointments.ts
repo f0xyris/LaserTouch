@@ -2,6 +2,7 @@ import 'dotenv/config';
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { Pool } from 'pg';
 import jwt from 'jsonwebtoken';
+import { sendAppointmentSubmittedEmail, sendAdminAppointmentNotification, sendAppointmentConfirmedEmail } from '../server/emailService';
 
 interface JWTPayload {
   userId: number;
@@ -258,6 +259,59 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         ]);
         
         console.log('POST appointment successful, created ID:', result.rows[0].id);
+
+        // Send emails (user + admin) similar to local Express implementation
+        try {
+          // Try to get service name for email
+          let serviceName: string = 'Unknown Service';
+          try {
+            const svcRes = await client.query('SELECT name FROM services WHERE id = $1', [serviceId]);
+            const svc = svcRes.rows?.[0];
+            const nameVal = svc?.name;
+            if (typeof nameVal === 'string') {
+              serviceName = nameVal;
+            } else if (nameVal && typeof nameVal === 'object') {
+              serviceName = nameVal.ua || nameVal.en || nameVal.pl || nameVal.ru || serviceName;
+            }
+          } catch (e) {
+            console.warn('Failed to fetch service for email, proceeding with default name');
+          }
+
+          const userEmail = payload.email;
+          const userLanguage = 'ua';
+
+          try {
+            await sendAppointmentSubmittedEmail(
+              userEmail,
+              serviceName,
+              new Date(formattedDate),
+              userLanguage
+            );
+          } catch (emailErr) {
+            console.error('Error sending appointment submission email:', emailErr);
+          }
+
+          try {
+            const adminEmail = process.env.ADMIN_EMAIL || 'antip4uck.ia@gmail.com';
+            const clientName = `${payload.firstName || ''} ${payload.lastName || ''}`.trim() || 'Unknown Client';
+            const clientPhone = 'No phone provided';
+
+            await sendAdminAppointmentNotification(
+              adminEmail,
+              clientName,
+              userEmail,
+              clientPhone,
+              serviceName,
+              new Date(formattedDate),
+              userLanguage
+            );
+          } catch (adminErr) {
+            console.error('Error sending admin notification email:', adminErr);
+          }
+        } catch (wrapErr) {
+          console.error('Unexpected error during email sending:', wrapErr);
+        }
+
         res.status(201).json({ id: result.rows[0].id });
                  } else if (req.method === 'PUT') {
              // CRITICAL FIX: Handle appointment updates from both URL parameters and request body
@@ -305,12 +359,42 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         }
         
         const result = await client.query(query, queryParams);
-        
+
         if (result.rowCount === 0) {
           return res.status(404).json({ error: 'Appointment not found or access denied' });
         }
-        
-                console.log('PUT appointment successful, updated rows:', result.rowCount);
+
+        // If status updated to confirmed, send confirmation email
+        try {
+          if (status === 'confirmed') {
+            const apptRes = await client.query(
+              `SELECT a.id, a.user_id, a.service_id, a.appointment_date, u.email as user_email, s.name as service_name
+               FROM appointments a
+               LEFT JOIN users u ON a.user_id = u.id
+               LEFT JOIN services s ON a.service_id = s.id
+               WHERE a.id = $1`,
+              [appointmentId]
+            );
+            const appt = apptRes.rows?.[0];
+            if (appt && appt.user_email) {
+              let serviceName: string = 'Unknown Service';
+              const nameVal = appt.service_name;
+              if (typeof nameVal === 'string') serviceName = nameVal;
+              else if (nameVal && typeof nameVal === 'object') serviceName = nameVal.ua || nameVal.en || nameVal.pl || nameVal.ru || serviceName;
+
+              await sendAppointmentConfirmedEmail(
+                appt.user_email,
+                serviceName,
+                new Date(appt.appointment_date),
+                'ua'
+              );
+            }
+          }
+        } catch (emailErr) {
+          console.error('Error sending appointment confirmation email:', emailErr);
+        }
+
+        console.log('PUT appointment successful, updated rows:', result.rowCount);
         res.status(200).json({ success: true });
       } else if (req.method === 'DELETE') {
         // Delete appointment

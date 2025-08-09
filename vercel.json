@@ -67,6 +67,14 @@
       "dest": "/api/auth/google/callback.ts"
     },
     {
+      "src": "/api/create-payment-intent",
+      "dest": "/api/create-payment-intent.ts"
+    },
+    {
+      "src": "/api/webhook/stripe",
+      "dest": "/api/webhook/stripe.ts"
+    },
+    {
       "src": "/api/(.*)",
       "dest": "/api/[...path].ts"
     },
