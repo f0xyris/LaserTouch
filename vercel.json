@@ -69,8 +69,9 @@
     },
     {
       "src": "/api/auth/google/callback",
-      "dest": "/api/auth/google/callback.ts"
+      "dest": "/api/auth/google.ts"
     },
+
     {
       "src": "/api/auth/demo-login",
       "dest": "/api/auth/demo-login.ts"
