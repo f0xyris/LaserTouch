@@ -132,18 +132,16 @@ const Admin = () => {
     setApproving(id);
     try {
       const token = localStorage.getItem('auth_token');
+      // По пожеланию: отклонённые отзывы сразу удаляем
       const res = await fetch(`/api/reviews?id=${id}`, { 
-        method: "PUT", 
+        method: "DELETE", 
         credentials: "include",
         headers: { 
-          'Content-Type': 'application/json',
           ...(token ? { 'Authorization': `Bearer ${token}` } : {})
-        },
-        body: JSON.stringify({ status: 'rejected' })
+        }
       });
-      const data = await res.json();
-      if (!res.ok) {
-        alert('Error: ' + (data?.error || res.status));
+      if (!res.ok && res.status !== 204) {
+        alert('Error: ' + res.status);
       }
       fetchReviews();
     } catch (err) {
@@ -164,20 +162,10 @@ const Admin = () => {
         credentials: "include",
         headers: token ? { 'Authorization': `Bearer ${token}` } : {}
       });
-      let data = null;
-      try {
-        data = await res.clone().json();
-      } catch (jsonErr) {
-        // Если не JSON — значит ошибка сервера или не найден эндпоинт
-        toast({ title: t.error, description: t.reviewDeleteError, variant: "destructive" });
-        setApproving(null);
-        setOpenDialogId(null);
-        return;
-      }
-      if (!res.ok) {
-        toast({ title: t.error, description: t.reviewDeleteError, variant: "destructive" });
-      } else {
+      if (res.ok || res.status === 204) {
         toast({ title: t.success, description: t.reviewDeleted });
+      } else {
+        toast({ title: t.error, description: t.reviewDeleteError, variant: "destructive" });
       }
       fetchReviews();
     } catch (err) {
