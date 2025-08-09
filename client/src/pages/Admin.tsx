@@ -97,7 +97,7 @@ const Admin = () => {
   const fetchReviews = () => {
     setReviewsTab(r => ({ ...r, loading: true }));
     const token = localStorage.getItem('auth_token');
-    fetch("/api/reviews/all", { 
+    fetch("/api/reviews", { 
       credentials: "include",
       headers: token ? { 'Authorization': `Bearer ${token}` } : {}
     })
@@ -115,10 +115,14 @@ const Admin = () => {
   const approveReview = async (id: number) => {
     setApproving(id);
     const token = localStorage.getItem('auth_token');
-    await fetch(`/api/reviews/${id}/approve`, { 
-      method: "POST", 
+    await fetch(`/api/reviews?id=${id}`, { 
+      method: "PUT", 
       credentials: "include",
-      headers: token ? { 'Authorization': `Bearer ${token}` } : {}
+      headers: { 
+        'Content-Type': 'application/json',
+        ...(token ? { 'Authorization': `Bearer ${token}` } : {})
+      },
+      body: JSON.stringify({ status: 'approved' })
     });
     fetchReviews();
     setApproving(null);
@@ -128,10 +132,14 @@ const Admin = () => {
     setApproving(id);
     try {
       const token = localStorage.getItem('auth_token');
-      const res = await fetch(`/api/reviews/${id}/reject`, { 
-        method: "POST", 
+      const res = await fetch(`/api/reviews?id=${id}`, { 
+        method: "PUT", 
         credentials: "include",
-        headers: token ? { 'Authorization': `Bearer ${token}` } : {}
+        headers: { 
+          'Content-Type': 'application/json',
+          ...(token ? { 'Authorization': `Bearer ${token}` } : {})
+        },
+        body: JSON.stringify({ status: 'rejected' })
       });
       const data = await res.json();
       if (!res.ok) {
@@ -151,7 +159,7 @@ const Admin = () => {
     setApproving(id);
     try {
       const token = localStorage.getItem('auth_token');
-      const res = await fetch(`/api/reviews/${id}`, { 
+      const res = await fetch(`/api/reviews?id=${id}`, { 
         method: "DELETE", 
         credentials: "include",
         headers: token ? { 'Authorization': `Bearer ${token}` } : {}
