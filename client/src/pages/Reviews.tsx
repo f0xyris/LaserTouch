@@ -18,9 +18,9 @@ const Reviews = () => {
 
   // Получаем отзывы с сервера используя React Query для лучшей производительности
   const { data: reviews = [], isLoading: loadingReviews } = useQuery({
-    queryKey: ["/api/reviews/all"],
+    queryKey: ["/api/reviews"],
     queryFn: async () => {
-      const response = await fetch("/api/reviews/all");
+      const response = await fetch("/api/reviews");
       if (!response.ok) return [];
       const data = await response.json();
       return Array.isArray(data) ? data : [];
@@ -114,14 +114,21 @@ const Reviews = () => {
         status: 'pending'
       };
       if (user && user.id) payload.userId = user.id;
+      const token = localStorage.getItem('auth_token');
       const res = await fetch("/api/reviews", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: { 
+          "Content-Type": "application/json",
+          ...(token ? { 'Authorization': `Bearer ${token}` } : {})
+        },
         body: JSON.stringify(payload)
       });
       if (res.ok) {
         setPendingReviews([{ ...form }, ...pendingReviews]);
         setForm({ name: user ? `${user.firstName || ''} ${user.lastName || ''}`.trim() : "", comment: "", rating: 5 });
+      } else if (res.status === 401) {
+        // Not authenticated – suggest login
+        alert('Пожалуйста, войдите, чтобы оставить отзыв.');
       }
     } finally {
       setSubmitting(false);

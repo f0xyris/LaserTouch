@@ -30,7 +30,17 @@ function extractTokenFromRequest(req: any): string | null {
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   // Enable CORS
-  res.setHeader('Access-Control-Allow-Origin', '*');
+  // Allow known origins to send credentials/headers
+  const allowedOrigins = [
+    'https://laser-touch.vercel.app',
+    'https://laser-touch-git-main-yaroslav-kravets-projects.vercel.app',
+    'http://localhost:5173',
+    'http://localhost:3000'
+  ];
+  const origin = req.headers.origin as string | undefined;
+  if (origin && allowedOrigins.includes(origin)) {
+    res.setHeader('Access-Control-Allow-Origin', origin);
+  }
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
   res.setHeader('Access-Control-Allow-Credentials', 'true');
@@ -49,12 +59,15 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     // Check if user is admin (optional for GET, required for other methods)
     const token = extractTokenFromRequest(req);
     let isAdmin = false;
-    let userId = null;
+    let userId: number | null = null;
+    let isDemo = false;
     
     if (token) {
       const payload = verifyToken(token);
       isAdmin = payload?.isAdmin || false;
-      userId = payload?.userId || null;
+      userId = (payload?.userId as number) || null;
+      // Demo users are allowed to create synthetic reviews without DB writes
+      isDemo = (payload as any)?.isDemo === true;
     }
     
     if (!process.env.DATABASE_URL) {
@@ -158,7 +171,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         
       } else if (req.method === 'POST') {
         // Create new review (requires authentication)
-        if (!userId) {
+        if (!userId && !isDemo) {
           return res.status(401).json({ error: 'Authentication required' });
         }
         
@@ -166,6 +179,22 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         
         if (!rating || !comment) {
           return res.status(400).json({ error: 'Rating and comment are required' });
+        }
+
+        if (isDemo) {
+          // Do not write to DB in demo mode; return synthetic review
+          return res.status(201).json({
+            id: Math.floor(Math.random() * 1000000) + 1000,
+            userId: null,
+            userName: 'Demo User',
+            serviceId: serviceId || null,
+            rating,
+            comment,
+            status: 'pending',
+            isApproved: false,
+            createdAt: new Date().toISOString(),
+            demo: true,
+          });
         }
         
         const result = await client.query(`
