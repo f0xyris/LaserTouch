@@ -41,6 +41,7 @@ const demoState = {
   appointmentsStatus: new Map<number, string>(),
   deletedAppointments: new Set<number>(),
   createdAppointments: [] as any[],
+  createdReviews: [] as any[],
 };
 
 // Helper: apply demo overlays (status overrides, deletions) and optionally merge demo-created appointments
@@ -69,6 +70,31 @@ function isDemoRequest(req: any): boolean {
   } catch {
     return false;
   }
+}
+
+function getAuthFlags(req: any): { isDemo: boolean; isAdmin: boolean } {
+  try {
+    const token = extractTokenFromRequest(req);
+    if (!token) return { isDemo: false, isAdmin: false };
+    const payload: any = verifyToken(token);
+    return { isDemo: !!payload?.isDemo, isAdmin: !!payload?.isAdmin };
+  } catch {
+    return { isDemo: false, isAdmin: false };
+  }
+}
+
+function mergeReviewsWithDemo(baseReviews: any[], includeDemo: boolean) {
+  let combined = Array.isArray(baseReviews) ? [...baseReviews] : [];
+  if (includeDemo) {
+    combined = [...demoState.createdReviews, ...combined];
+  }
+  combined = combined
+    .filter(rv => !demoState.deletedReviews.has(rv.id))
+    .map(rv => ({
+      ...rv,
+      status: demoState.reviewsStatus.get(rv.id) || rv.status,
+    }));
+  return combined;
 }
 
 function maskEmail(email?: string | null) {
@@ -1107,8 +1133,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Получить только одобренные отзывы
   app.get("/api/reviews", async (req, res) => {
     try {
-      const reviews = await storage.getReviewsByStatus("approved");
-      res.json(reviews);
+      const { isDemo, isAdmin } = getAuthFlags(req);
+      const base = isAdmin || isDemo
+        ? await storage.getAllReviews()
+        : await storage.getReviewsByStatus("approved");
+      const merged = mergeReviewsWithDemo(base, isDemo);
+      if (isDemo) {
+        return res.json(merged.map(r => ({
+          ...r,
+          name: r.name ? (r.name[0] + ".") : "Anonymous",
+        })));
+      }
+      res.json(merged);
     } catch (error) {
       res.status(500).json({ error: "Failed to fetch reviews" });
     }
@@ -1117,14 +1153,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Получить все отзывы (только для админа)
   app.get("/api/reviews/all", isAdminJWT, async (req: any, res) => {
     try {
-      const reviews = await storage.getAllReviews();
+      const base = await storage.getAllReviews();
+      const merged = mergeReviewsWithDemo(base, req.isDemo);
       if (req.isDemo) {
-        return res.json(reviews.map(r => ({
+        return res.json(merged.map(r => ({
           ...r,
           name: r.name ? r.name[0] + "." : "Anonymous",
         })));
       }
-      res.json(reviews);
+      res.json(merged);
     } catch (error) {
       res.status(500).json({ error: "Failed to fetch all reviews" });
     }
@@ -1175,18 +1212,32 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post("/api/reviews", async (req, res) => {
+  app.post("/api/reviews", async (req: any, res) => {
     try {
       // Только нужные поля, статус всегда pending
       const { name, rating, comment, userId } = req.body;
+      if (isDemoRequest(req)) {
+        const fake = {
+          id: Math.floor(Math.random() * 1000000) + 1000,
+          name: name || null,
+          rating: Number(rating) || 5,
+          comment: comment || "",
+          status: "pending",
+          userId: 0,
+          serviceId: null,
+          createdAt: new Date().toISOString(),
+        } as any;
+        demoState.createdReviews.push(fake);
+        return res.status(201).json(fake);
+      }
       const reviewData = insertReviewSchema.parse({
         name,
         rating,
         comment,
         userId: userId || null,
         serviceId: null,
-        status: "pending"
-      });
+        status: "pending",
+      } as any);
       const review = await storage.createReview(reviewData);
       res.status(201).json(review);
     } catch (error) {
@@ -1196,6 +1247,50 @@ export async function registerRoutes(app: Express): Promise<Server> {
       } else {
         res.status(500).json({ error: "Failed to create review" });
       }
+    }
+  });
+
+  // Compatibility endpoints for current Admin UI (PUT with ?id and DELETE with ?id)
+  app.put("/api/reviews", isAdminJWT, async (req: any, res) => {
+    try {
+      const id = parseInt(req.query.id as string);
+      const { status } = req.body as { status: string };
+      if (!id || !status) return res.status(400).json({ error: "id and status required" });
+      if (req.isDemo) {
+        if (["approved", "rejected", "pending"].includes(status)) {
+          demoState.reviewsStatus.set(id, status as any);
+          return res.json({ id, status });
+        }
+        return res.status(400).json({ error: "Invalid status" });
+      }
+      if (status === "approved") {
+        const rv = await storage.approveReview(id);
+        return res.json(rv);
+      }
+      if (status === "rejected") {
+        const rv = await storage.rejectReview(id);
+        return res.json(rv);
+      }
+      return res.status(400).json({ error: "Unsupported status" });
+    } catch (error) {
+      console.error("Error updating review status:", error);
+      res.status(500).json({ error: "Failed to update review" });
+    }
+  });
+
+  app.delete("/api/reviews", isAdminJWT, async (req: any, res) => {
+    try {
+      const id = parseInt(req.query.id as string);
+      if (!id) return res.status(400).json({ error: "id required" });
+      if (req.isDemo) {
+        demoState.deletedReviews.add(id);
+        return res.status(204).send();
+      }
+      await storage.deleteReview(id);
+      return res.status(204).send();
+    } catch (error) {
+      console.error("Error deleting review:", error);
+      res.status(500).json({ error: "Failed to delete review" });
     }
   });
 
