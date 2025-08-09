@@ -159,6 +159,11 @@ export interface Translations {
   manageUsers: string;
   viewReports: string;
   
+  // Not Found page
+  notFoundTitle: string;
+  notFoundSubtitle: string;
+  backToSmoothness: string;
+  
   // Hero slides
   slide1Title: string;
   slide1Subtitle: string;
@@ -472,6 +477,9 @@ export const translations: Record<Language, Translations> = {
     manageBookings: "Manage Bookings",
     manageUsers: "Manage Users",
     viewReports: "View Reports",
+    notFoundTitle: "Looks like this page vanished as smoothly as hair after a laser!",
+    notFoundSubtitle: "Oops! This area is already perfectly smooth — the page wasn’t found.",
+    backToSmoothness: "Back to smoothness",
     slide1Title: "Professional Laser Hair Removal",
     slide1Subtitle: "Experience the ultimate in beauty treatments",
     slide1Description: "Advanced laser technology for permanent hair removal with minimal discomfort",
@@ -793,6 +801,9 @@ export const translations: Record<Language, Translations> = {
     manageBookings: "Zarządzaj rezerwacjami",
     manageUsers: "Zarządzaj użytkownikami",
     viewReports: "Wyświetl raporty",
+    notFoundTitle: "Wygląda na to, że ta strona zniknęła tak gładko, jak włosy po laserze!",
+    notFoundSubtitle: "Ups! Ten obszar jest już idealnie gładki — strony nie znaleziono.",
+    backToSmoothness: "Wróć do gładkości",
     slide1Title: "Profesjonalna depilacja laserowa",
     slide1Subtitle: "Doświadcz najwyższego poziomu zabiegów kosmetycznych",
     slide1Description: "Zaawansowana technologia laserowa do trwałego usuwania włosów z minimalnym dyskomfortem",
@@ -1114,6 +1125,9 @@ export const translations: Record<Language, Translations> = {
     manageBookings: "Керувати бронюваннями",
     manageUsers: "Керувати користувачами",
     viewReports: "Переглянути звіти",
+    notFoundTitle: "Схоже, ця сторінка зникла так само, як волосся після лазера!",
+    notFoundSubtitle: "Ой! Ця ділянка вже ідеально гладка — сторінку не знайдено.",
+    backToSmoothness: "Повернутися до гладкості",
     slide1Title: "Професійна лазерна епіляція",
     slide1Subtitle: "Відчуйте найвищий рівень косметичних процедур",
     slide1Description: "Передова лазерна технологія для постійного видалення волосся з мінімальним дискомфортом",
