@@ -2,7 +2,7 @@ import 'dotenv/config';
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { Pool } from 'pg';
 import jwt from 'jsonwebtoken';
-import { sendAppointmentSubmittedEmail, sendAdminAppointmentNotification, sendAppointmentConfirmedEmail } from '../server/emailService';
+import { sendAppointmentSubmittedEmail, sendAdminAppointmentNotification, sendAppointmentConfirmedEmail } from '../server/emailService.js';
 
 interface JWTPayload {
   userId: number;

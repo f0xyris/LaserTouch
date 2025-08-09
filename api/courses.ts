@@ -2,7 +2,7 @@ import 'dotenv/config';
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { Pool } from 'pg';
 import Stripe from 'stripe';
-import { sendCoursePurchasedEmail } from '../server/emailService';
+import { sendCoursePurchasedEmail } from '../server/emailService.js';
 
 const stripe = process.env.STRIPE_SECRET_KEY
   ? new Stripe(process.env.STRIPE_SECRET_KEY, { apiVersion: '2025-06-30.basil' })
