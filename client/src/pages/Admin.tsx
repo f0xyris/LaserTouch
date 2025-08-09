@@ -98,7 +98,8 @@ const Admin = () => {
     const silent = options?.silent === true;
     if (!silent) setReviewsTab(r => ({ ...r, loading: true }));
     const token = localStorage.getItem('auth_token');
-    fetch("/api/reviews", { 
+    // В админке запрашиваем полный список
+    fetch("/api/reviews/all", { 
       credentials: "include",
       headers: token ? { 'Authorization': `Bearer ${token}` } : {}
     })

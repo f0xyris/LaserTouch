@@ -62,7 +62,11 @@ const Booking = () => {
     queryKey: ["/api/appointments/by-date", formData.date],
     queryFn: async () => {
       if (!formData.date) return [];
-      const response = await fetch(`/api/appointments/by-date?date=${formData.date}`);
+      const token = localStorage.getItem('auth_token');
+      const response = await fetch(`/api/appointments/by-date?date=${formData.date}` , {
+        headers: token ? { 'Authorization': `Bearer ${token}` } : {},
+        credentials: 'include',
+      });
       if (!response.ok) throw new Error("Failed to fetch appointments");
       return response.json();
     },
