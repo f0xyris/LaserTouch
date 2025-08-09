@@ -43,6 +43,34 @@ const demoState = {
   createdAppointments: [] as any[],
 };
 
+// Helper: apply demo overlays (status overrides, deletions) and optionally merge demo-created appointments
+function mergeAppointmentsWithDemo(baseAppointments: any[], includeDemo: boolean) {
+  let combined = Array.isArray(baseAppointments) ? [...baseAppointments] : [];
+  if (includeDemo) {
+    combined = [...demoState.createdAppointments, ...combined];
+  }
+  // Apply deletions and status overrides
+  combined = combined
+    .filter(appt => !demoState.deletedAppointments.has(appt.id))
+    .map(appt => ({
+      ...appt,
+      status: demoState.appointmentsStatus.get(appt.id) || appt.status,
+    }));
+  return combined;
+}
+
+// Helper: determine if request is from demo user when route is not guarded by JWT middleware
+function isDemoRequest(req: any): boolean {
+  try {
+    const token = extractTokenFromRequest(req);
+    if (!token) return false;
+    const payload: any = verifyToken(token);
+    return !!(payload && payload.isDemo);
+  } catch {
+    return false;
+  }
+}
+
 function maskEmail(email?: string | null) {
   if (!email) return null;
   const [name, domain] = email.split("@");
@@ -636,6 +664,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/appointments/user", isAuthenticatedJWT, async (req: any, res) => {
     try {
       const userId = req.user.id;
+      // Demo user: return demo-created appointments linked to demo identity (userId = 0)
+      if (req.isDemo) {
+        const demoUserAppointments = mergeAppointmentsWithDemo([], true)
+          .filter((a: any) => a.userId === 0);
+        return res.json(demoUserAppointments.map(maskAppointmentData));
+      }
       const appointments = await storage.getAppointmentsByUserId(userId);
       res.json(appointments);
     } catch (error) {
@@ -647,11 +681,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Get all appointments (admin only)
   app.get("/api/appointments", isAdminJWT, async (req: any, res) => {
     try {
-      const appointments = await storage.getAllAppointments();
+      const appointmentsDb = await storage.getAllAppointments();
+      const merged = mergeAppointmentsWithDemo(appointmentsDb, req.isDemo);
       if (req.isDemo) {
-        return res.json(appointments.map(maskAppointmentData));
+        return res.json(merged.map(maskAppointmentData));
       }
-      res.json(appointments);
+      res.json(merged);
     } catch (error) {
       console.error("Error fetching appointments:", error);
       res.status(500).json({ error: "Failed to fetch appointments" });
@@ -662,11 +697,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/appointments/recent", isAdminJWT, async (req: any, res) => {
     try {
       const limit = parseInt(req.query.limit as string) || 10;
-      const appointments = await storage.getRecentAppointments(limit);
+      const recentDb = await storage.getRecentAppointments(limit * 2); // fetch extra to allow demo merges & slicing
+      const merged = mergeAppointmentsWithDemo(recentDb, req.isDemo)
+        .sort((a: any, b: any) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+        .slice(0, limit);
       if (req.isDemo) {
-        return res.json(appointments.map(maskAppointmentData));
+        return res.json(merged.map(maskAppointmentData));
       }
-      res.json(appointments);
+      res.json(merged);
     } catch (error) {
       console.error("Error fetching recent appointments:", error);
       res.status(500).json({ error: "Failed to fetch recent appointments" });
@@ -678,18 +716,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       if (req.isDemo) {
         // Simulate success, don't persist
-        const { serviceId, appointmentDate } = req.body;
+        const { serviceId, appointmentDate, notes } = req.body;
         const fake = {
           id: Math.floor(Math.random() * 1000000) + 1000,
           appointmentDate,
           status: "pending",
-          notes: null,
+          notes: notes || null,
           createdAt: new Date().toISOString(),
           clientName: null,
           clientPhone: null,
           clientEmail: null,
+          userId: 0,
           user: maskUserData(req.user),
           service: await storage.getService(parseInt(serviceId)),
+          demo: true,
         } as any;
         demoState.createdAppointments.push(fake);
         return res.status(201).json(maskAppointmentData(fake));
@@ -775,6 +815,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           clientEmail: clientInfo?.email || null,
           user: null,
           service: await storage.getService(parseInt(serviceId)),
+          demo: true,
         } as any;
         demoState.createdAppointments.push(fake);
         return res.status(201).json(maskAppointmentData(fake));
@@ -1041,7 +1082,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       // Get all appointments and filter by date
-      const allAppointments = await storage.getAllAppointments();
+      const includeDemo = isDemoRequest(req);
+      const allAppointmentsDb = await storage.getAllAppointments();
+      const allAppointments = mergeAppointmentsWithDemo(allAppointmentsDb, includeDemo);
       
       // Filter appointments for the specific date
       const dateAppointments = allAppointments.filter((appointment: any) => {
