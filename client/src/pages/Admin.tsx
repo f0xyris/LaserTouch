@@ -94,8 +94,9 @@ const Admin = () => {
   // --- Отзывы ---
   const [reviewsTab, setReviewsTab] = useReactState<{ loading: boolean, data: any[] }>({ loading: true, data: [] });
   const [approving, setApproving] = useReactState<number | null>(null);
-  const fetchReviews = () => {
-    setReviewsTab(r => ({ ...r, loading: true }));
+  const fetchReviews = (options?: { silent?: boolean }) => {
+    const silent = options?.silent === true;
+    if (!silent) setReviewsTab(r => ({ ...r, loading: true }));
     const token = localStorage.getItem('auth_token');
     fetch("/api/reviews", { 
       credentials: "include",
@@ -105,7 +106,7 @@ const Admin = () => {
         return res.json();
       })
       .then(data => {
-        setReviewsTab({ loading: false, data });
+        setReviewsTab(prev => ({ loading: false, data }));
       })
       .catch((error) => {
         setReviewsTab({ loading: false, data: [] });
@@ -114,6 +115,9 @@ const Admin = () => {
   useEffect(() => { fetchReviews(); }, []);
   const approveReview = async (id: number) => {
     setApproving(id);
+    // Optimistic UI update
+    const previous = reviewsTab.data;
+    setReviewsTab(r => ({ ...r, data: r.data.map(rv => rv.id === id ? { ...rv, status: 'approved' } : rv) }));
     const token = localStorage.getItem('auth_token');
     await fetch(`/api/reviews?id=${id}`, { 
       method: "PUT", 
@@ -124,7 +128,8 @@ const Admin = () => {
       },
       body: JSON.stringify({ status: 'approved' })
     });
-    fetchReviews();
+    // Silent refresh to avoid flicker
+    fetchReviews({ silent: true });
     setApproving(null);
   };
 
@@ -132,6 +137,9 @@ const Admin = () => {
     setApproving(id);
     try {
       const token = localStorage.getItem('auth_token');
+      // Optimistic remove
+      const previous = reviewsTab.data;
+      setReviewsTab(r => ({ ...r, data: r.data.filter(rv => rv.id !== id) }));
       // По пожеланию: отклонённые отзывы сразу удаляем
       const res = await fetch(`/api/reviews?id=${id}`, { 
         method: "DELETE", 
@@ -141,9 +149,13 @@ const Admin = () => {
         }
       });
       if (!res.ok && res.status !== 204) {
+        // Rollback on error
+        setReviewsTab(r => ({ ...r, data: previous }));
         alert('Error: ' + res.status);
+      } else {
+        // Silent refresh to keep in sync, no flicker
+        fetchReviews({ silent: true });
       }
-      fetchReviews();
     } catch (err) {
       console.error('Reject error:', err);
       alert('Network or JS error: ' + err);
@@ -157,6 +169,9 @@ const Admin = () => {
     setApproving(id);
     try {
       const token = localStorage.getItem('auth_token');
+      // Optimistic remove
+      const previous = reviewsTab.data;
+      setReviewsTab(r => ({ ...r, data: r.data.filter(rv => rv.id !== id) }));
       const res = await fetch(`/api/reviews?id=${id}`, { 
         method: "DELETE", 
         credentials: "include",
@@ -164,10 +179,13 @@ const Admin = () => {
       });
       if (res.ok || res.status === 204) {
         toast({ title: t.success, description: t.reviewDeleted });
+        // Silent refresh after success
+        fetchReviews({ silent: true });
       } else {
+        // Rollback and notify
+        setReviewsTab(r => ({ ...r, data: previous }));
         toast({ title: t.error, description: t.reviewDeleteError, variant: "destructive" });
       }
-      fetchReviews();
     } catch (err) {
       console.error('Delete error:', err);
       toast({ title: t.error, description: t.reviewDeleteError, variant: "destructive" });
