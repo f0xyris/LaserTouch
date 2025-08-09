@@ -217,13 +217,20 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         if (!id || !status) {
           return res.status(400).json({ error: 'Review ID and status are required' });
         }
-        
-        const result = await client.query(`
-          UPDATE reviews 
-          SET status = $1, updated_at = NOW()
-          WHERE id = $2
-          RETURNING *
-        `, [status, id]);
+        // Check existing columns to avoid referencing non-existent updated_at
+        const columnsRes = await client.query(`
+          SELECT column_name FROM information_schema.columns WHERE table_name = 'reviews'
+        `);
+        const colNames = columnsRes.rows.map(r => r.column_name);
+        const hasUpdatedAt = colNames.includes('updated_at');
+
+        let updateSql = 'UPDATE reviews SET status = $1';
+        if (hasUpdatedAt) {
+          updateSql += ', updated_at = NOW()';
+        }
+        updateSql += ' WHERE id = $2 RETURNING *';
+
+        const result = await client.query(updateSql, [status, id]);
         
         if (result.rows.length === 0) {
           return res.status(404).json({ error: 'Review not found' });
