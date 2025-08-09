@@ -23,17 +23,14 @@
       "dest": "/api/services.ts"
     },
     {
-      "src": "/api/reviews/all",
-      "dest": "/api/reviews/all.ts"
+      "src": "/api/reviews",
+      "dest": "/api/reviews.ts"
     },
     {
       "src": "/api/appointments",
       "dest": "/api/appointments.ts"
     },
-    {
-      "src": "/api/appointments/by-date",
-      "dest": "/api/appointments/by-date.ts"
-    },
+
     {
       "src": "/api/appointments/(.*)",
       "dest": "/api/appointments.ts"
@@ -73,6 +70,10 @@
     {
       "src": "/api/auth/google/callback",
       "dest": "/api/auth/google/callback.ts"
+    },
+    {
+      "src": "/api/auth/demo-login",
+      "dest": "/api/auth/demo-login.ts"
     },
     {
       "src": "/api/(.*)",

@@ -83,6 +83,45 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     
     try {
       if (req.method === 'GET') {
+        // Check if this is a by-date request
+        const { date } = req.query;
+        if (date && typeof date === 'string') {
+          // Handle by-date request
+          const result = await client.query(`
+            SELECT 
+              a.id,
+              a.appointment_date as "appointmentDate",
+              a.status,
+              a.notes,
+              a.created_at as "createdAt",
+              a.client_name as "clientName",
+              a.client_phone as "clientPhone",
+              a.client_email as "clientEmail",
+              a.is_deleted_from_admin as "isDeletedFromAdmin",
+              u.id as "userId",
+              u.first_name as "firstName",
+              u.last_name as "lastName",
+              u.email,
+              u.phone
+            FROM appointments a
+            LEFT JOIN users u ON a.user_id = u.id
+            ORDER BY a.appointment_date DESC
+          `);
+
+          // Filter appointments for the specific date
+          const dateAppointments = result.rows.filter((appointment: any) => {
+            const appointmentDate = new Date(appointment.appointmentDate);
+            const queryDate = new Date(date);
+            
+            // Compare only the date part (year, month, day)
+            return appointmentDate.getFullYear() === queryDate.getFullYear() &&
+                   appointmentDate.getMonth() === queryDate.getMonth() &&
+                   appointmentDate.getDate() === queryDate.getDate();
+          });
+
+          return res.status(200).json(dateAppointments);
+        }
+
         // Check if appointments table exists
         let appointmentsStructure;
         try {
