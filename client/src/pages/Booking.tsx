@@ -45,7 +45,15 @@ const Booking = () => {
     queryFn: async () => {
       const response = await fetch("/api/services");
       if (!response.ok) throw new Error("Failed to fetch services");
-      return response.json();
+      const data = await response.json();
+      // Merge local demo services if present
+      try {
+        const local = JSON.parse(localStorage.getItem('demo_services') || '[]');
+        if (Array.isArray(local) && local.length > 0) {
+          return [...data, ...local];
+        }
+      } catch {}
+      return data;
     }
   });
 

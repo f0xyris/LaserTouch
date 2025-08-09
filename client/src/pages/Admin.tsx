@@ -454,8 +454,17 @@ const Admin = () => {
       if (!response.ok) {
         throw new Error("Failed to create appointment");
       }
-      
-      return response.json();
+
+      const created = await response.json();
+      // Persist demo appointment locally to reflect in UI
+      if (isDemo && typeof window !== 'undefined' && created?.demo) {
+        const local = JSON.parse(localStorage.getItem('demo_appointments_recent') || '[]');
+        const createdObj = { ...created };
+        const updated = Array.isArray(local) ? [createdObj, ...local] : [createdObj];
+        localStorage.setItem('demo_appointments_recent', JSON.stringify(updated));
+      }
+
+      return created;
     },
     onMutate: async (appointmentData) => {
       // Cancel any outgoing refetches
@@ -645,6 +654,14 @@ const Admin = () => {
         throw new Error("Failed to fetch recent appointments");
       }
       const data = await response.json();
+      if (isDemo && typeof window !== 'undefined') {
+        try {
+          const local = JSON.parse(localStorage.getItem('demo_appointments_recent') || '[]');
+          if (Array.isArray(local) && local.length > 0) {
+            return [...local, ...data];
+          }
+        } catch {}
+      }
       return data;
     },
     staleTime: 10 * 1000, // 10 секунд - данные считаются свежими только 10 секунд
@@ -661,7 +678,17 @@ const Admin = () => {
         headers: token ? { 'Authorization': `Bearer ${token}` } : {}
       });
       if (!response.ok) throw new Error("Failed to fetch services");
-      return response.json();
+      const data = await response.json();
+      // In demo mode, merge server data with locally created demo services
+      if (isDemo && typeof window !== 'undefined') {
+        try {
+          const local = JSON.parse(localStorage.getItem('demo_services') || '[]');
+          if (Array.isArray(local) && local.length > 0) {
+            return [...data, ...local];
+          }
+        } catch {}
+      }
+      return data;
     }
   });
 
@@ -1767,6 +1794,15 @@ function PricesEditor() {
         // Invalidate services cache to update booking page
         queryClient.invalidateQueries({ queryKey: ["/api/services"] });
       }
+      // If backend responded with demo flag, persist to local demo store
+      try {
+        const data = await res.clone().json();
+        if (data?.demo && type !== 'course') {
+          const local = JSON.parse(localStorage.getItem('demo_services') || '[]');
+          const updated = Array.isArray(local) ? local.map((s:any)=> s.id===id? { ...s, price, duration, name, description }: s) : [];
+          localStorage.setItem('demo_services', JSON.stringify(updated));
+        }
+      } catch {}
     } else {
       toast({ title: t.error || t.saveError || "Error", description: t.saveError || "Error saving", variant: "destructive" });
     }
@@ -1818,6 +1854,12 @@ function PricesEditor() {
     if (res.ok) {
       const created = await res.json();
       setServices(services => [...services, created]);
+      // If it is a demo object, store it locally to persist in UI between reloads
+      if (created?.demo && typeof window !== 'undefined') {
+        const local = JSON.parse(localStorage.getItem('demo_services') || '[]');
+        const updated = Array.isArray(local) ? [...local, created] : [created];
+        localStorage.setItem('demo_services', JSON.stringify(updated));
+      }
       setNewService({ name: { ua: '', en: '', pl: '' }, price: "", duration: "" });
       setAddingService(false);
       toast({ title: t.success || t.added || "Success", description: t.added || "Added" });
@@ -1892,6 +1934,12 @@ function PricesEditor() {
     if (res.ok) {
       const created = await res.json();
       setCourses(courses => [...courses, created]);
+      // If demo object, persist locally so UI keeps it after reload
+      if (created?.demo && typeof window !== 'undefined') {
+        const local = JSON.parse(localStorage.getItem('demo_courses') || '[]');
+        const updated = Array.isArray(local) ? [...local, created] : [created];
+        localStorage.setItem('demo_courses', JSON.stringify(updated));
+      }
       setNewCourse({ name: { ua: '', en: '', pl: '' }, price: "", duration: "", description: { ua: '', en: '', pl: '' }, file: null, imageUrl: "" });
       setImagePreview("");
       setAddingCourse(false);

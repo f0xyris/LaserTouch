@@ -9,6 +9,7 @@ interface JWTPayload {
   firstName?: string;
   lastName?: string;
   isAdmin: boolean;
+  isDemo?: boolean;
 }
 
 function verifyToken(token: string): JWTPayload | null {
@@ -63,6 +64,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       console.log('Admin access required, payload:', payload);
       return res.status(403).json({ error: 'Admin access required' });
     }
+    const isDemo = payload.isDemo === true;
     
     if (!process.env.DATABASE_URL) {
       console.error('❌ DATABASE_URL not found');
@@ -95,16 +97,39 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       
       console.log('Users query result:', usersResult.rows.length, 'users found');
       
-      const users = usersResult.rows.map(user => ({
-        id: user.id,
-        email: user.email,
-        firstName: user.first_name,
-        lastName: user.last_name,
-        phone: user.phone,
-        isAdmin: user.is_admin,
-        createdAt: user.created_at,
-        updatedAt: user.updated_at
-      }));
+      const maskEmail = (email: string) => {
+        const [name, domain] = email.split('@');
+        if (!name || !domain) return '***@***';
+        const visible = Math.min(2, name.length);
+        return `${name.slice(0, visible)}***@${domain}`;
+      };
+      const maskName = (value: string | null) => (value ? `${value[0]}***` : null);
+
+      const users = usersResult.rows.map(user => {
+        if (isDemo) {
+          return {
+            id: user.id,
+            email: maskEmail(user.email),
+            firstName: maskName(user.first_name),
+            lastName: maskName(user.last_name),
+            phone: user.phone ? `${String(user.phone).slice(0, 2)}***` : null,
+            isAdmin: user.is_admin,
+            createdAt: user.created_at,
+            updatedAt: user.updated_at,
+            isMasked: true,
+          };
+        }
+        return {
+          id: user.id,
+          email: user.email,
+          firstName: user.first_name,
+          lastName: user.last_name,
+          phone: user.phone,
+          isAdmin: user.is_admin,
+          createdAt: user.created_at,
+          updatedAt: user.updated_at
+        };
+      });
       
       res.status(200).json(users);
       

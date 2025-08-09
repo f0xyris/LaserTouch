@@ -69,6 +69,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     if (!payload) {
       return res.status(401).json({ error: 'Invalid token' });
     }
+    const isDemo = (payload as any).isDemo === true;
     
     if (!process.env.DATABASE_URL) {
       return res.status(500).json({ error: 'Database configuration missing' });
@@ -231,7 +232,15 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         console.log('Appointments query result:', appointmentsResult.rows.length, 'appointments found');
         console.log('Raw appointments data:', appointmentsResult.rows);
         
-                 const appointments = appointmentsResult.rows.map(appointment => ({
+        const maskEmail = (email: string | null) => {
+          if (!email) return null as any;
+          const [name, domain] = email.split('@');
+          if (!name || !domain) return '***@***' as any;
+          const visible = Math.min(2, name.length);
+          return `${name.slice(0, visible)}***@${domain}` as any;
+        };
+
+        const appointments = appointmentsResult.rows.map(appointment => ({
            id: appointment.id,
            userId: appointment.user_id,
            serviceId: appointment.service_id,
@@ -243,7 +252,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
            user: {
              firstName: appointment.user_first_name,
              lastName: appointment.user_last_name,
-             email: appointment.user_email
+            email: isDemo ? maskEmail(appointment.user_email) : appointment.user_email
            },
                        service: {
               name: typeof appointment.service_name === 'object' && appointment.service_name?.ua 
@@ -285,7 +294,21 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         console.log('Formatted date:', formattedDate);
         console.log('Target user ID:', targetUserId);
         
-                         const result = await client.query(`
+        if (isDemo) {
+          // In demo mode, do not write to DB; return synthetic record that resembles real one
+          return res.status(201).json({
+            id: Math.floor(Math.random() * 1000000) + 1000,
+            userId: targetUserId,
+            serviceId,
+            appointmentDate: formattedDate,
+            status: 'pending',
+            notes: notes || '',
+            createdAt: new Date().toISOString(),
+            demo: true,
+          });
+        }
+
+        const result = await client.query(`
           INSERT INTO appointments (user_id, service_id, appointment_date, status, notes, created_at)
           VALUES ($1, $2, $3, $4, $5, NOW())
           RETURNING id

@@ -75,13 +75,13 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       return res.status(401).json({ message: 'Invalid token' });
     }
 
-    // If this is a demo token, return a synthetic admin user without DB lookup
+    // If this is a demo token, return a synthetic admin user without DB lookup and mask sensitive fields
     if (payload.isDemo) {
       return res.status(200).json({
         id: 0,
-        email: payload.email || 'demo@lasertouch.example',
-        firstName: payload.firstName || 'Demo',
-        lastName: payload.lastName || 'Admin',
+        email: 'de***@lasertouch.example',
+        firstName: 'De***',
+        lastName: 'Ad***',
         profileImageUrl: null,
         googleId: null,
         phone: null,
