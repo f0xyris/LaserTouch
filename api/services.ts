@@ -1,6 +1,25 @@
 import 'dotenv/config';
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { Pool } from 'pg';
+import jwt from 'jsonwebtoken';
+
+type JWTPayload = { userId: number; email: string; isAdmin: boolean; firstName?: string; lastName?: string; isDemo?: boolean };
+
+function extractToken(req: VercelRequest): string | null {
+  const auth = req.headers['authorization'];
+  if (auth && typeof auth === 'string' && auth.startsWith('Bearer ')) return auth.slice(7);
+  return null;
+}
+
+function verifyToken(token: string | null): JWTPayload | null {
+  if (!token) return null;
+  const secret = process.env.JWT_SECRET || 'your-secret-key-change-in-production';
+  try {
+    return jwt.verify(token, secret) as JWTPayload;
+  } catch {
+    return null;
+  }
+}
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   // Enable CORS
@@ -19,6 +38,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
   try {
     console.log('Services endpoint called with method:', req.method);
+    const payload = verifyToken(extractToken(req));
+    const isDemo = !!payload?.isDemo;
     
     if (!process.env.DATABASE_URL) {
       console.error('❌ DATABASE_URL not found');
@@ -92,6 +113,18 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       } else if (req.method === 'POST') {
         // Create new service
         const { name, description, price, duration } = req.body;
+        if (isDemo) {
+          return res.status(201).json({
+            id: Math.floor(Math.random() * 1000000) + 1000,
+            name: name || { ua: '', en: '', pl: '' },
+            description: description || { ua: '', en: '', pl: '' },
+            price: price || 0,
+            duration: duration || 60,
+            isActive: true,
+            category: 'custom',
+            demo: true,
+          });
+        }
         
         const result = await client.query(`
           INSERT INTO services (name, description, price, duration, is_active, created_at, updated_at)
@@ -109,6 +142,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       } else if (req.method === 'PUT') {
         // Update service
         const { id, name, description, price, duration } = req.body;
+        if (isDemo) {
+          return res.status(200).json({ success: true, demo: true });
+        }
         
         await client.query(`
           UPDATE services 
@@ -126,6 +162,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       } else if (req.method === 'DELETE') {
         // Delete service (soft delete)
         const { id } = req.query;
+        if (isDemo) {
+          return res.status(200).json({ success: true, demo: true });
+        }
         
         await client.query(`
           UPDATE services 

@@ -20,6 +20,7 @@ import Admin from "@/pages/Admin";
 import CourseCheckout from "@/pages/CourseCheckout";
 import Login from "@/pages/Login";
 import NotFound from "@/pages/not-found";
+import LoginAdmin from "@/pages/LoginAdmin";
 
 function Router() {
   return (
@@ -30,6 +31,7 @@ function Router() {
       <Route path="/reviews" component={Reviews} />
       <Route path="/account" component={Account} />
       <Route path="/admin" component={Admin} />
+      <Route path="/login-admin" component={LoginAdmin} />
       <Route path="/checkout/course/:id" component={CourseCheckout} />
       <Route path="/login" component={Login} />
 

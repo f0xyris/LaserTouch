@@ -88,6 +88,9 @@ const Admin = () => {
     }
   }, [selectedDate]);
 
+  // Demo banner
+  const isDemo = (currentUser as any)?.isDemo === true;
+
   // --- Отзывы ---
   const [reviewsTab, setReviewsTab] = useReactState<{ loading: boolean, data: any[] }>({ loading: true, data: [] });
   const [approving, setApproving] = useReactState<number | null>(null);
@@ -193,7 +196,7 @@ const Admin = () => {
       const data = await response.json();
       return data;
     },
-    enabled: !!currentUser?.isAdmin,
+    enabled: !!(currentUser && (currentUser as any).isAdmin || (currentUser as any)?.isDemo),
   });
 
   // Fetch appointments
@@ -215,7 +218,7 @@ const Admin = () => {
       const data = await response.json();
       return data;
     },
-    enabled: !!currentUser?.isAdmin,
+    enabled: !!(currentUser && (currentUser as any).isAdmin || (currentUser as any)?.isDemo),
     staleTime: 10 * 1000, // 10 секунд - данные считаются свежими только 10 секунд
     refetchOnWindowFocus: true, // Обновляем при фокусе окна
     refetchOnMount: true, // Обновляем при монтировании
@@ -727,7 +730,9 @@ const Admin = () => {
   const adminCount = users?.filter(user => user.isAdmin).length || 0;
   const totalUsers = users?.length || 0;
 
-  if (!currentUser?.isAdmin) {
+  const allowAdmin = !!(currentUser && ((currentUser as any).isAdmin || (currentUser as any).isDemo));
+
+  if (!allowAdmin) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-sage-50 to-sage-100 dark:from-sage-900 dark:to-sage-800">
         <Card className="max-w-md">
@@ -770,6 +775,13 @@ const Admin = () => {
   return (
     <main className="admin-page min-h-[calc(100vh-64px)] flex items-center justify-center px-2 sm:px-4 lg:px-8 py-4 sm:py-8 dark:bg-deep-900">
       <div className="max-w-7xl w-full">
+        {isDemo && (
+          <div className="mb-4 rounded-md border border-amber-300 bg-amber-50 dark:bg-amber-900/20 text-amber-800 dark:text-amber-300 px-4 py-3">
+            <p className="text-sm">
+              Demo mode: data is masked and changes are not saved.
+            </p>
+          </div>
+        )}
         <div className="text-center mb-6 sm:mb-10">
           <h1 className="text-xl sm:text-3xl font-bold text-mystical-500 dark:text-mystical-400 mb-2 sm:mb-4">
             {t.adminTitle || "Admin Panel"}
@@ -1022,7 +1034,7 @@ const Admin = () => {
                           onCheckedChange={(checked) => {
                             updateAdminMutation.mutate({ userId: user.id, isAdmin: checked ?? false });
                           }}
-                          disabled={updateAdminMutation.isPending || user.id === currentUser.id}
+                          disabled={isDemo || updateAdminMutation.isPending || user.id === currentUser.id}
                         />
                         <span className="text-sm text-muted-foreground">
                           {user.isAdmin ? (t.admin || "Admin") : (t.user || "User")}
@@ -1136,7 +1148,7 @@ const Admin = () => {
                           size="sm"
                           variant="outline"
                           onClick={() => handleUpdateAppointmentStatus(appointment.id, 'confirmed')}
-                          disabled={updateAppointmentStatusMutation.isPending}
+                          disabled={isDemo || updateAppointmentStatusMutation.isPending}
                           className="h-8 px-2 text-xs"
                         >
                           {t.confirmAppointment}
@@ -1145,7 +1157,7 @@ const Admin = () => {
                           size="sm"
                           variant="destructive"
                           onClick={() => handleUpdateAppointmentStatus(appointment.id, 'cancelled')}
-                          disabled={updateAppointmentStatusMutation.isPending}
+                          disabled={isDemo || updateAppointmentStatusMutation.isPending}
                           className="h-8 px-2 text-xs"
                         >
                           {t.rejectAppointment}
@@ -1158,7 +1170,7 @@ const Admin = () => {
                           size="sm"
                           variant="outline"
                           onClick={() => handleUpdateAppointmentStatus(appointment.id, 'completed')}
-                          disabled={updateAppointmentStatusMutation.isPending}
+                          disabled={isDemo || updateAppointmentStatusMutation.isPending}
                           className="h-8 px-2 text-xs"
                         >
                           {t.completeAppointment}
@@ -1167,7 +1179,7 @@ const Admin = () => {
                           size="sm"
                           variant="destructive"
                           onClick={() => handleUpdateAppointmentStatus(appointment.id, 'cancelled')}
-                          disabled={updateAppointmentStatusMutation.isPending}
+                          disabled={isDemo || updateAppointmentStatusMutation.isPending}
                           className="h-8 px-2 text-xs"
                         >
                           {t.cancelAppointment}
@@ -1485,7 +1497,7 @@ const Admin = () => {
                     <div className="flex gap-2">
                       <Button 
                         type="submit" 
-                        disabled={createAppointmentMutation.isPending}
+                        disabled={isDemo || createAppointmentMutation.isPending}
                         className="bg-gradient-to-r from-mystical-500 to-accent-500 text-white hover:from-mystical-600 hover:to-accent-600"
                       >
                         {createAppointmentMutation.isPending ? (
@@ -1681,6 +1693,8 @@ export default Admin;
 function PricesEditor() {
   const { t } = useLanguage();
   const { toast } = useToast();
+  const { user: authUser } = useAuth();
+  const isDemo = (authUser as any)?.isDemo === true;
   const queryClient = useQueryClient();
   const [courses, setCourses] = useReactState<any[]>([]);
   const [services, setServices] = useReactState<any[]>([]);
@@ -1700,7 +1714,7 @@ function PricesEditor() {
 
   useEffect(() => {
     setLoading(true);
-    const token = localStorage.getItem('authToken');
+    const token = localStorage.getItem('auth_token');
     Promise.all([
       fetch("/api/courses", {
         headers: token ? { 'Authorization': `Bearer ${token}` } : {}

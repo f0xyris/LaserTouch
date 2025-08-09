@@ -24,7 +24,7 @@ A modern, responsive website for a beauty salon with appointment booking, course
 
 ## 📋 Prerequisites
 
-- Node.js 18+ 
+- Node.js 18+
 - PostgreSQL database
 - Stripe account
 - Gmail account (for SMTP)
@@ -32,41 +32,45 @@ A modern, responsive website for a beauty salon with appointment booking, course
 ## 🛠️ Installation
 
 1. **Clone the repository**
+
    ```bash
    git clone https://github.com/f0xyris/LaserTouch.git
    cd LaserTouch
    ```
 
 2. **Install dependencies**
+
    ```bash
    npm install
    ```
 
 3. **Set up environment variables**
    Create a `.env` file in the root directory:
+
    ```env
    # Database
    DATABASE_URL=your_postgresql_url
-   
+
    # Stripe
    STRIPE_SECRET_KEY=sk_test_your_stripe_key
    STRIPE_WEBHOOK_SECRET=whsec_your_webhook_secret
-   
+
    # SMTP
    SMTP_HOST=smtp.gmail.com
    SMTP_PORT=587
    SMTP_USER=your-email@gmail.com
    SMTP_PASS=your-app-password
-   
+
    # Session
    SESSION_SECRET=your_session_secret
-   
+
    # Google OAuth
    GOOGLE_CLIENT_ID=your_google_client_id
    GOOGLE_CLIENT_SECRET=your_google_client_secret
    ```
 
 4. **Run database migrations**
+
    ```bash
    npm run db:push
    ```
@@ -78,14 +82,27 @@ A modern, responsive website for a beauty salon with appointment booking, course
 
 ## 🌐 Deployment
 
-The project is configured for easy deployment on Vercel with automatic database integration using Neon PostgreSQL. See [VERCEL_SETUP.md](./VERCEL_SETUP.md) for deployment instructions.
+Ready for Vercel (Hobby plan safe):
+
+- Uses a single server bundle locally (`server/`) and serverless endpoints under `api/` for Vercel.
+- Keep total serverless functions under Hobby limit (<= 12). Existing routes are consolidated; demo mode does not add extra functions.
+- Environment variables required on Vercel: `DATABASE_URL`, `JWT_SECRET`, `STRIPE_SECRET_KEY`, `SMTP_*` (if using emails), `BASE_URL`.
+
+Steps:
+
+1. Push the repo to GitHub.
+2. Import in Vercel.
+3. Set env vars.
+4. Deploy.
+
+Client is built with Vite; Vercel config (`vercel.json`) routes API calls to serverless functions and serves the SPA.
 
 ## 📧 Email System
 
 The website includes a comprehensive email notification system:
 
 - **Appointment Submitted** - Confirmation when user books appointment
-- **Appointment Confirmed** - Notification when admin confirms appointment  
+- **Appointment Confirmed** - Notification when admin confirms appointment
 - **Course Purchased** - Confirmation after successful course payment
 
 ## 🎨 Customization
@@ -102,6 +119,16 @@ The website includes a comprehensive email notification system:
 - Service and course management
 - Review moderation
 - Email testing interface
+
+### Demo Admin Mode (Preview)
+
+- Quick access link: `/login-admin`.
+- After redirect, you’ll land on `/admin` as a demo admin.
+- Privacy: personal data is masked (email/phone/name parts), notes hidden.
+- Safety: any create/update/delete is simulated and not written to DB.
+- You can fully navigate admin, open tabs, try creating services/courses; server returns simulated items.
+
+To disable demo mode, just logout or clear the `auth_token` in LocalStorage.
 
 ## 🔒 Security
 
@@ -125,4 +152,4 @@ This project is licensed under the MIT License.
 
 ## 📞 Support
 
-For support and questions, please contact the development team. 
+For support and questions, please contact the development team.

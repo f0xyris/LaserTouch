@@ -6,6 +6,8 @@ export interface JWTPayload {
   firstName?: string;
   lastName?: string;
   isAdmin: boolean;
+  // Optional flag to indicate demo/preview mode user
+  isDemo?: boolean;
 }
 
 export function generateToken(payload: JWTPayload): string {

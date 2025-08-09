@@ -34,6 +34,59 @@ const SUPPORTED_LANGS = ["ua", "en", "ru"];
 const GOOGLE_TRANSLATE_API_KEY = process.env.GOOGLE_TRANSLATE_API_KEY || null;
 const YANDEX_TRANSLATE_API_KEY = process.env.YANDEX_TRANSLATE_API_KEY || null;
 
+// In-memory demo state overlays (ephemeral, per-process)
+const demoState = {
+  reviewsStatus: new Map<number, "approved" | "rejected" | "pending">(),
+  deletedReviews: new Set<number>(),
+  appointmentsStatus: new Map<number, string>(),
+  deletedAppointments: new Set<number>(),
+  createdAppointments: [] as any[],
+};
+
+function maskEmail(email?: string | null) {
+  if (!email) return null;
+  const [name, domain] = email.split("@");
+  const maskedName = name.length <= 2 ? "**" : name[0] + "***" + name[name.length - 1];
+  const domainParts = domain.split(".");
+  const maskedDomain = domainParts[0][0] + "***" + "." + domainParts.slice(1).join(".");
+  return `${maskedName}@${maskedDomain}`;
+}
+
+function maskPhone(phone?: string | null) {
+  if (!phone) return null;
+  const digits = phone.replace(/\D/g, "");
+  if (digits.length < 4) return "***";
+  return `+** **** ${digits.slice(-4)}`;
+}
+
+function maskName(firstName?: string | null, lastName?: string | null) {
+  const f = firstName ? firstName[0] + "." : "";
+  const l = lastName ? lastName[0] + "." : "";
+  return `${f} ${l}`.trim();
+}
+
+function maskUserData(user: any) {
+  if (!user) return null;
+  return {
+    id: user.id,
+    firstName: user.firstName ? user.firstName[0] + "." : null,
+    lastName: user.lastName ? user.lastName[0] + "." : null,
+    email: maskEmail(user.email),
+    phone: maskPhone(user.phone),
+  };
+}
+
+function maskAppointmentData(appt: any) {
+  return {
+    ...appt,
+    notes: null,
+    clientName: appt.clientName ? "Client" : null,
+    clientPhone: appt.clientPhone ? maskPhone(appt.clientPhone) : null,
+    clientEmail: appt.clientEmail ? maskEmail(appt.clientEmail) : null,
+    user: maskUserData(appt.user),
+  };
+}
+
 // JWT Authentication Middleware
 const isAuthenticatedJWT = async (req: any, res: any, next: any) => {
   try {
@@ -46,6 +99,23 @@ const isAuthenticatedJWT = async (req: any, res: any, next: any) => {
     const payload = verifyToken(token);
     if (!payload) {
       return res.status(401).json({ message: "Invalid token" });
+    }
+
+    // Demo user short-circuit: no DB access
+    if ((payload as any).isDemo) {
+      req.user = {
+        id: 0,
+        email: payload.email,
+        firstName: payload.firstName,
+        lastName: payload.lastName,
+        profileImageUrl: null,
+        googleId: null,
+        phone: null,
+        isAdmin: true,
+        isDemo: true,
+      };
+      (req as any).isDemo = true;
+      return next();
     }
 
     // Get fresh user data from database
@@ -75,8 +145,11 @@ const isAuthenticatedJWT = async (req: any, res: any, next: any) => {
         profileImageUrl: user.profile_image_url,
         googleId: user.google_id,
         phone: user.phone,
-        isAdmin: user.is_admin
+        isAdmin: user.is_admin,
+        isDemo: payload.isDemo === true,
       };
+      // Also expose a top-level flag for convenience
+      (req as any).isDemo = payload.isDemo === true;
 
       next();
     } finally {
@@ -100,6 +173,23 @@ const isAdminJWT = async (req: any, res: any, next: any) => {
     const payload = verifyToken(token);
     if (!payload) {
       return res.status(401).json({ message: "Invalid token" });
+    }
+
+    // Demo user short-circuit: treat as admin without DB access
+    if ((payload as any).isDemo) {
+      req.user = {
+        id: 0,
+        email: payload.email,
+        firstName: payload.firstName,
+        lastName: payload.lastName,
+        profileImageUrl: null,
+        googleId: null,
+        phone: null,
+        isAdmin: true,
+        isDemo: true,
+      };
+      (req as any).isDemo = true;
+      return next();
     }
 
     if (!payload.isAdmin) {
@@ -133,8 +223,10 @@ const isAdminJWT = async (req: any, res: any, next: any) => {
         profileImageUrl: user.profile_image_url,
         googleId: user.google_id,
         phone: user.phone,
-        isAdmin: user.is_admin
+        isAdmin: user.is_admin,
+        isDemo: payload.isDemo === true,
       };
+      (req as any).isDemo = payload.isDemo === true;
 
       next();
     } finally {
@@ -328,6 +420,30 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Demo login endpoint – returns a demo admin token with masked permissions
+  app.post("/api/auth/demo-login", async (_req, res) => {
+    try {
+      const demoUser = {
+        id: 0,
+        email: "demo@lasertouch.example",
+        firstName: "Demo",
+        lastName: "Admin",
+        isAdmin: true,
+      };
+      const token = generateToken({
+        userId: demoUser.id,
+        email: demoUser.email,
+        firstName: demoUser.firstName,
+        lastName: demoUser.lastName,
+        isAdmin: true,
+        isDemo: true,
+      });
+      res.status(200).json({ token, user: { ...demoUser, isDemo: true } });
+    } catch (e) {
+      res.status(500).json({ error: "Failed to create demo session" });
+    }
+  });
+
   // Universal JWT User info endpoint (works both locally and on Vercel)
   app.get("/api/auth/user", async (req, res) => {
     try {
@@ -342,6 +458,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const payload = verifyToken(token);
       if (!payload) {
         return res.status(401).json({ message: 'Invalid token' });
+      }
+
+      // Demo user: return lightweight demo identity without DB access
+      if ((payload as any).isDemo) {
+        return res.status(200).json({
+          id: 0,
+          email: maskEmail(payload.email),
+          firstName: payload.firstName,
+          lastName: payload.lastName,
+          profileImageUrl: null,
+          googleId: null,
+          phone: null,
+          isAdmin: true,
+          isDemo: true,
+        });
       }
 
       // Get fresh user data from database (same as Vercel)
@@ -514,9 +645,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Get all appointments (admin only)
-  app.get("/api/appointments", isAdminJWT, async (req, res) => {
+  app.get("/api/appointments", isAdminJWT, async (req: any, res) => {
     try {
       const appointments = await storage.getAllAppointments();
+      if (req.isDemo) {
+        return res.json(appointments.map(maskAppointmentData));
+      }
       res.json(appointments);
     } catch (error) {
       console.error("Error fetching appointments:", error);
@@ -525,10 +659,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Get recent appointments (admin only)
-  app.get("/api/appointments/recent", isAdminJWT, async (req, res) => {
+  app.get("/api/appointments/recent", isAdminJWT, async (req: any, res) => {
     try {
       const limit = parseInt(req.query.limit as string) || 10;
       const appointments = await storage.getRecentAppointments(limit);
+      if (req.isDemo) {
+        return res.json(appointments.map(maskAppointmentData));
+      }
       res.json(appointments);
     } catch (error) {
       console.error("Error fetching recent appointments:", error);
@@ -539,6 +676,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Create appointment (for authenticated users)
   app.post("/api/appointments", isAuthenticatedJWT, async (req: any, res) => {
     try {
+      if (req.isDemo) {
+        // Simulate success, don't persist
+        const { serviceId, appointmentDate } = req.body;
+        const fake = {
+          id: Math.floor(Math.random() * 1000000) + 1000,
+          appointmentDate,
+          status: "pending",
+          notes: null,
+          createdAt: new Date().toISOString(),
+          clientName: null,
+          clientPhone: null,
+          clientEmail: null,
+          user: maskUserData(req.user),
+          service: await storage.getService(parseInt(serviceId)),
+        } as any;
+        demoState.createdAppointments.push(fake);
+        return res.status(201).json(maskAppointmentData(fake));
+      }
       const { serviceId, appointmentDate, notes, status } = req.body;
       
       // Create appointment data with proper field mapping
@@ -606,6 +761,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Create appointment for client without account (admin only)
   app.post("/api/appointments/admin", isAdminJWT, async (req: any, res) => {
     try {
+      if (req.isDemo) {
+        // Simulate creation without persisting
+        const { appointmentDate, clientInfo, serviceId, status } = req.body;
+        const fake = {
+          id: Math.floor(Math.random() * 1000000) + 1000,
+          appointmentDate,
+          status: status || "confirmed",
+          notes: null,
+          createdAt: new Date().toISOString(),
+          clientName: clientInfo?.name || "Client",
+          clientPhone: clientInfo?.phone || null,
+          clientEmail: clientInfo?.email || null,
+          user: null,
+          service: await storage.getService(parseInt(serviceId)),
+        } as any;
+        demoState.createdAppointments.push(fake);
+        return res.status(201).json(maskAppointmentData(fake));
+      }
       const { serviceId, appointmentDate, notes, status, clientInfo } = req.body;
       
       // Admin can create appointments without client name - no validation needed
@@ -659,6 +832,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ error: "Invalid status" });
       }
 
+      if ((req as any).isDemo) {
+        demoState.appointmentsStatus.set(appointmentId, status);
+        return res.json({ id: appointmentId, status });
+      }
       const appointment = await storage.updateAppointmentStatus(appointmentId, status);
       if (!appointment) {
         return res.status(404).json({ error: "Appointment not found" });
@@ -699,9 +876,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.delete("/api/appointments/:id", isAdminJWT, async (req, res) => {
+  app.delete("/api/appointments/:id", isAdminJWT, async (req: any, res) => {
     try {
       const appointmentId = parseInt(req.params.id);
+      if (req.isDemo) {
+        demoState.deletedAppointments.add(appointmentId);
+        return res.status(204).send();
+      }
       await storage.deleteAppointment(appointmentId);
       res.status(204).send();
     } catch (error) {
@@ -742,10 +923,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Users routes (admin only)
-  app.get("/api/users", isAdminJWT, async (req, res) => {
+  app.get("/api/users", isAdminJWT, async (req: any, res) => {
     try {
       const users = await storage.getAllUsers();
       const usersWithoutPasswords = users.map(user => ({ ...user, password: undefined }));
+      if (req.isDemo) {
+        return res.json(usersWithoutPasswords.map(u => ({
+          ...u,
+          email: maskEmail(u.email),
+          phone: maskPhone(u.phone as any),
+          firstName: u.firstName ? u.firstName[0] + "." : null,
+          lastName: u.lastName ? u.lastName[0] + "." : null,
+        })));
+      }
       res.json(usersWithoutPasswords);
     } catch (error) {
       res.status(500).json({ error: "Failed to fetch users" });
@@ -787,7 +977,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Update user admin status (admin only)
-  app.put("/api/users/:id/admin", isAdminJWT, async (req, res) => {
+  app.put("/api/users/:id/admin", isAdminJWT, async (req: any, res) => {
     try {
       const userId = parseInt(req.params.id);
       const { isAdmin } = req.body;
@@ -795,7 +985,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (typeof isAdmin !== 'boolean') {
         return res.status(400).json({ error: "isAdmin must be a boolean" });
       }
-      
+      if (req.isDemo) {
+        return res.json({ id: userId, isAdmin });
+      }
       const user = await storage.updateUserAdminStatus(userId, isAdmin);
       res.json({ ...user, password: undefined });
     } catch (error) {
@@ -880,9 +1072,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Получить все отзывы (только для админа)
-  app.get("/api/reviews/all", isAdminJWT, async (req, res) => {
+  app.get("/api/reviews/all", isAdminJWT, async (req: any, res) => {
     try {
       const reviews = await storage.getAllReviews();
+      if (req.isDemo) {
+        return res.json(reviews.map(r => ({
+          ...r,
+          name: r.name ? r.name[0] + "." : "Anonymous",
+        })));
+      }
       res.json(reviews);
     } catch (error) {
       res.status(500).json({ error: "Failed to fetch all reviews" });
@@ -890,9 +1088,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Одобрить отзыв (только для админа)
-  app.post("/api/reviews/:id/approve", isAdminJWT, async (req, res) => {
+  app.post("/api/reviews/:id/approve", isAdminJWT, async (req: any, res) => {
     try {
       const reviewId = parseInt(req.params.id);
+      if (req.isDemo) {
+        demoState.reviewsStatus.set(reviewId, "approved");
+        return res.json({ id: reviewId, status: "approved" });
+      }
       const review = await storage.approveReview(reviewId);
       res.json(review);
     } catch (error) {
@@ -901,9 +1103,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Отклонить отзыв (только для админа)
-  app.post("/api/reviews/:id/reject", isAdminJWT, async (req, res) => {
+  app.post("/api/reviews/:id/reject", isAdminJWT, async (req: any, res) => {
     try {
       const reviewId = parseInt(req.params.id);
+      if (req.isDemo) {
+        demoState.reviewsStatus.set(reviewId, "rejected");
+        return res.json({ id: reviewId, status: "rejected" });
+      }
       const review = await storage.rejectReview(reviewId);
       res.json(review);
     } catch (error) {
@@ -912,9 +1118,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Удалить отзыв (только для админа)
-  app.delete("/api/reviews/:id", isAdminJWT, async (req, res) => {
+  app.delete("/api/reviews/:id", isAdminJWT, async (req: any, res) => {
     try {
       const reviewId = parseInt(req.params.id);
+      if (req.isDemo) {
+        demoState.deletedReviews.add(reviewId);
+        return res.json({ success: true });
+      }
       await storage.deleteReview(reviewId);
       res.json({ success: true });
     } catch (error) {
@@ -970,8 +1180,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Обновить курс (только для админа)
-  app.put("/api/courses/:id", isAdminJWT, async (req, res) => {
+  app.put("/api/courses/:id", isAdminJWT, async (req: any, res) => {
     try {
+      if (req.isDemo) {
+        const { price, duration, name, description } = req.body;
+        return res.json({ id: Number(req.params.id), price, duration, name, description, demo: true });
+      }
       const id = Number(req.params.id);
       const { price, duration, name, description } = req.body;
       const updateData: any = { price, duration };
@@ -985,8 +1199,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Обновить услугу (только для админа)
-  app.put("/api/services/:id", isAdminJWT, async (req, res) => {
+  app.put("/api/services/:id", isAdminJWT, async (req: any, res) => {
     try {
+      if (req.isDemo) {
+        const { price, duration, name, description } = req.body;
+        return res.json({ id: Number(req.params.id), price, duration, name, description, demo: true });
+      }
       const id = Number(req.params.id);
       const { price, duration, name, description } = req.body;
       const updateData: any = { price, duration };
@@ -1002,6 +1220,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Добавить услугу (только для админа)
   app.post("/api/services", isAdminJWT, async (req, res) => {
     try {
+      if ((req as any).isDemo) {
+        const { name, price, duration, description, category } = req.body;
+        return res.status(201).json({
+          id: Math.floor(Math.random() * 1000000) + 1000,
+          name,
+          price,
+          duration,
+          description: description || {},
+          category: category || "custom",
+          demo: true,
+        });
+      }
       let { name, price, duration, description, category } = req.body;
       if (!name || !price || !duration) {
         return res.status(400).json({ error: "Missing required fields" });
@@ -1023,6 +1253,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.delete("/api/services/:id", isAdminJWT, async (req, res) => {
     try {
       const id = Number(req.params.id);
+      if ((req as any).isDemo) {
+        return res.json({ success: true });
+      }
       await storage.deleteService(id);
       res.json({ success: true });
     } catch (error: any) {
@@ -1037,6 +1270,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Добавить курс (только для админа)
   app.post("/api/courses", isAdminJWT, async (req, res) => {
     try {
+      if ((req as any).isDemo) {
+        const { name, price, duration, description, category } = req.body;
+        return res.status(201).json({
+          id: Math.floor(Math.random() * 1000000) + 1000,
+          name,
+          price,
+          duration,
+          description,
+          category: category || "custom",
+          demo: true,
+        });
+      }
       let { name, price, duration, description, category } = req.body;
       if (!name || !price || !duration) {
         return res.status(400).json({ error: "Missing required fields" });
@@ -1057,6 +1302,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.delete("/api/courses/:id", isAdminJWT, async (req, res) => {
     try {
       const id = Number(req.params.id);
+      if ((req as any).isDemo) {
+        return res.json({ success: true });
+      }
       await storage.deleteCourse(id);
       res.json({ success: true });
     } catch (error) {
@@ -1169,6 +1417,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Эндпоинт для загрузки файлов (картинок)
   app.post("/api/upload", isAdminJWT, upload.single("file"), (req: any, res) => {
+    if (req.isDemo) {
+      // Return a placeholder URL without storing real files in demo
+      return res.json({ url: "/uploads/demo-placeholder.png" });
+    }
     if (!req.file) {
       return res.status(400).json({ error: "No file uploaded" });
     }
@@ -1178,8 +1430,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Test endpoint for email functionality (admin only)
-  app.post("/api/test-email", isAdminJWT, async (req, res) => {
+  app.post("/api/test-email", isAdminJWT, async (req: any, res) => {
     try {
+      if (req.isDemo) {
+        return res.json({ success: true, demo: true });
+      }
       const { email, type, language = 'ua' } = req.body;
       
       if (!email) {

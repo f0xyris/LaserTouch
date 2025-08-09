@@ -166,7 +166,7 @@ export const ModernPreloader: React.FC<{ isVisible: boolean; onComplete?: () => 
           {/* Logo with laser effect */}
           <div className="relative">
             <div className="text-6xl font-playfair font-bold text-white mb-2 relative">
-              <span className="bg-gradient-to-r from-mystical-400 via-accent-400 to-mystical-400 bg-clip-text text-transparent">
+              <span className="bg-gradient-to-r from-mystical-400 via-accent-400 to-mystical-400 bg-clip-text text-mystical-400">
                 LaserTouch
               </span>
               {/* Laser scan effect */}

@@ -2,6 +2,7 @@ import 'dotenv/config';
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { Pool } from 'pg';
 import Stripe from 'stripe';
+import jwt from 'jsonwebtoken';
 import { sendCoursePurchasedEmail } from '../server/emailService.js';
 
 const stripe = process.env.STRIPE_SECRET_KEY
@@ -9,6 +10,16 @@ const stripe = process.env.STRIPE_SECRET_KEY
   : null as unknown as Stripe;
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
+  const extractToken = (req: VercelRequest): string | null => {
+    const auth = req.headers['authorization'];
+    if (auth && typeof auth === 'string' && auth.startsWith('Bearer ')) return auth.slice(7);
+    return null;
+  };
+  const verifyToken = (token: string | null): any => {
+    if (!token) return null;
+    const secret = process.env.JWT_SECRET || 'your-secret-key-change-in-production';
+    try { return jwt.verify(token, secret); } catch { return null; }
+  };
   const origin = req.headers.origin as string | undefined;
   const url = new URL(req.url || '/', 'https://laser-touch.vercel.app');
   const pathname = url.pathname;
@@ -131,7 +142,26 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     }
   }
 
-  // Default: GET /api/courses
+  // Create or GET /api/courses
+  if (pathname === '/api/courses' && req.method === 'POST') {
+    const payload = verifyToken(extractToken(req));
+    const isDemo = !!payload?.isDemo;
+    if (isDemo) {
+      const { name, price, duration, description, category, imageUrl } = req.body as any;
+      return res.status(201).json({
+        id: Math.floor(Math.random() * 1000000) + 1000,
+        name: name || { ua: '', en: '', pl: '' },
+        description: description || { ua: '', en: '', pl: '' },
+        price: price || 0,
+        duration: duration || 60,
+        imageUrl: imageUrl || null,
+        category: category || 'custom',
+        demo: true,
+      });
+    }
+    // For Hobby plan, we avoid implementing write here fully. Return 405.
+    return res.status(405).json({ error: 'Method not allowed on serverless in this deployment' });
+  }
   if (req.method !== 'GET' || pathname !== '/api/courses') {
     return res.status(405).json({ error: 'Method not allowed' });
   }

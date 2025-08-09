@@ -111,6 +111,7 @@ export default function Login() {
     window.location.href = "/api/auth/google";
   };
 
+
   // Show loading spinner while checking authentication
   if (isLoading) {
     return (
@@ -212,6 +213,8 @@ export default function Login() {
                   </svg>
                   {t.auth?.googleLogin || "Continue with Google"}
                 </Button>
+
+                {/* Demo button removed: use /login-admin link instead */}
               </TabsContent>
               
               <TabsContent value="register" className="space-y-4">
