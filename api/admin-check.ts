@@ -1,5 +1,42 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
-import { verifyToken, extractTokenFromRequest } from '../shared/jwt';
+import jwt from 'jsonwebtoken';
+
+interface JWTPayload {
+  userId: number;
+  email: string;
+  firstName?: string;
+  lastName?: string;
+  isAdmin: boolean;
+  isDemo?: boolean;
+}
+
+function verifyToken(token: string): JWTPayload | null {
+  const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key-change-in-production';
+  try {
+    return jwt.verify(token, JWT_SECRET) as JWTPayload;
+  } catch (error) {
+    console.error('JWT verification failed:', error);
+    return null;
+  }
+}
+
+function extractTokenFromRequest(req: any): string | null {
+  const authHeader = req.headers.authorization;
+  if (authHeader && authHeader.startsWith('Bearer ')) {
+    return authHeader.substring(7);
+  }
+  const cookies = req.headers.cookie;
+  if (cookies) {
+    const tokenMatch = cookies.match(/token=([^;]+)/);
+    if (tokenMatch) {
+      return tokenMatch[1];
+    }
+  }
+  if (req.query.token && typeof req.query.token === 'string') {
+    return req.query.token;
+  }
+  return null;
+}
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   // Enable CORS

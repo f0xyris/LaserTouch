@@ -9,6 +9,7 @@ interface JWTPayload {
   firstName?: string;
   lastName?: string;
   isAdmin: boolean;
+  isDemo?: boolean;
 }
 
 function verifyToken(token: string): JWTPayload | null {
@@ -72,6 +73,21 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const payload = verifyToken(token);
     if (!payload) {
       return res.status(401).json({ message: 'Invalid token' });
+    }
+
+    // If this is a demo token, return a synthetic admin user without DB lookup
+    if (payload.isDemo) {
+      return res.status(200).json({
+        id: 0,
+        email: payload.email || 'demo@lasertouch.example',
+        firstName: payload.firstName || 'Demo',
+        lastName: payload.lastName || 'Admin',
+        profileImageUrl: null,
+        googleId: null,
+        phone: null,
+        isAdmin: true,
+        isDemo: true
+      });
     }
 
     // Get fresh user data from database (same as local)
