@@ -37,7 +37,7 @@ const Footer = () => {
               </p>
               <p className="flex items-center">
                 <Mail className="mr-2 h-4 w-4 text-mystical-600 dark:text-mystical-400" />
-                info@lasertouch.ru
+                placeholder@gmail.com
               </p>
               <p className="flex items-center">
                 <Clock className="mr-2 h-4 w-4 text-mystical-600 dark:text-mystical-400" />

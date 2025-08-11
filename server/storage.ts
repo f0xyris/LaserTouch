@@ -46,20 +46,17 @@ export interface IStorage {
   getAppointmentById(id: number): Promise<any | undefined>;
   getConflictingAppointments(startDate: Date, endDate: Date, excludeId?: number): Promise<any[]>;
   deleteAppointment(id: number): Promise<void>;
-  
-  // Review operations
+
   getAllReviews(): Promise<Review[]>;
   createReview(review: InsertReview): Promise<Review>;
   rejectReview(id: number): Promise<Review | undefined>;
   deleteReview(id: number): Promise<void>;
-  
-  // Course operations
+
   getAllCourses(): Promise<Course[]>;
   createCourse(course: typeof courses.$inferInsert): Promise<Course>;
   getCourse(id: number): Promise<Course | undefined>;
   getCourseById(id: number): Promise<Course | undefined>;
-  
-  // Session store
+
   sessionStore: any;
 }
 
@@ -67,7 +64,6 @@ export class DatabaseStorage implements IStorage {
   sessionStore: any;
 
   constructor() {
-    // В продакшене используем PostgreSQL, в разработке - MemoryStore
     if (process.env.NODE_ENV === "production") {
       const PostgresStore = pgSimple(session);
       this.sessionStore = new PostgresStore({
@@ -80,7 +76,6 @@ export class DatabaseStorage implements IStorage {
     }
   }
 
-  // User operations
   async getUser(id: number): Promise<User | undefined> {
     const [user] = await db.select().from(users).where(eq(users.id, id));
     return user;
@@ -126,7 +121,6 @@ export class DatabaseStorage implements IStorage {
     return user;
   }
 
-  // Service operations
   async getAllServices(): Promise<Service[]> {
     const servicesData = await db.select().from(services);
     return servicesData;
@@ -158,7 +152,6 @@ export class DatabaseStorage implements IStorage {
     await db.delete(services).where(eq(services.id, id));
   }
 
-  // Appointment operations
   async getAllAppointments(): Promise<any[]> {
     const result = await db
       .select({
@@ -167,7 +160,6 @@ export class DatabaseStorage implements IStorage {
         status: appointments.status,
         notes: appointments.notes,
         createdAt: appointments.createdAt,
-        // Поля для клиентов без аккаунта
         clientName: appointments.clientName,
         clientPhone: appointments.clientPhone,
         clientEmail: appointments.clientEmail,
@@ -188,7 +180,7 @@ export class DatabaseStorage implements IStorage {
       .from(appointments)
       .leftJoin(users, eq(appointments.userId, users.id))
       .leftJoin(services, eq(appointments.serviceId, services.id))
-      .where(eq(appointments.isDeletedFromAdmin, false)) // Исключаем записи, удаленные из админки
+      .where(eq(appointments.isDeletedFromAdmin, false))
       .orderBy(desc(appointments.createdAt));
     
     return result;
@@ -211,7 +203,6 @@ export class DatabaseStorage implements IStorage {
         status: appointments.status,
         notes: appointments.notes,
         createdAt: appointments.createdAt,
-        // Поля для клиентов без аккаунта
         clientName: appointments.clientName,
         clientPhone: appointments.clientPhone,
         clientEmail: appointments.clientEmail,
@@ -239,7 +230,7 @@ export class DatabaseStorage implements IStorage {
   async getConflictingAppointments(startDate: Date, endDate: Date, excludeId?: number): Promise<any[]> {
     const conditions = [
       eq(appointments.status, "confirmed"),
-              eq(appointments.isDeletedFromAdmin, false), // Исключаем записи, удаленные из админки
+              eq(appointments.isDeletedFromAdmin, false),
       or(
         and(
           gte(appointments.appointmentDate, startDate),
@@ -275,7 +266,6 @@ export class DatabaseStorage implements IStorage {
   }
 
   async deleteAppointment(id: number): Promise<void> {
-    // Сначала проверим, существует ли запись
     const existingAppointment = await db.select().from(appointments).where(eq(appointments.id, id));
     
     if (existingAppointment.length === 0) {
@@ -283,7 +273,6 @@ export class DatabaseStorage implements IStorage {
     }
     
     try {
-      // Помечаем запись как удаленную из админки (не меняя основной статус)
       await db.update(appointments)
         .set({ isDeletedFromAdmin: true } as any)
         .where(eq(appointments.id, id));
@@ -312,7 +301,7 @@ export class DatabaseStorage implements IStorage {
       })
       .from(appointments)
       .leftJoin(services, eq(appointments.serviceId, services.id))
-      .where(eq(appointments.userId, userId)) // Показываем все записи пользователя (включая удаленные из админки)
+      .where(eq(appointments.userId, userId))
       .orderBy(desc(appointments.appointmentDate));
   }
 
@@ -325,16 +314,14 @@ export class DatabaseStorage implements IStorage {
   }
 
   async createAppointmentForClient(appointmentData: any): Promise<Appointment> {
-    // Для клиентов без аккаунта userId будет null
     const appointmentDataForClient = {
       ...appointmentData,
-      userId: null, // Убираем userId для клиентов без аккаунта
+      userId: null,
       clientName: appointmentData.clientInfo?.name || null,
       clientPhone: appointmentData.clientInfo?.phone || null,
       clientEmail: appointmentData.clientInfo?.email || null,
     };
     
-    // Убираем clientInfo из данных, так как мы уже извлекли нужные поля
     delete appointmentDataForClient.clientInfo;
     
     const [appointment] = await db
@@ -353,7 +340,6 @@ export class DatabaseStorage implements IStorage {
         status: appointments.status,
         notes: appointments.notes,
         createdAt: appointments.createdAt,
-        // Поля для клиентов без аккаунта
         clientName: appointments.clientName,
         clientPhone: appointments.clientPhone,
         clientEmail: appointments.clientEmail,
@@ -374,14 +360,13 @@ export class DatabaseStorage implements IStorage {
       .from(appointments)
       .leftJoin(users, eq(appointments.userId, users.id))
       .leftJoin(services, eq(appointments.serviceId, services.id))
-      .where(eq(appointments.isDeletedFromAdmin, false)) // Исключаем записи, удаленные из админки
+      .where(eq(appointments.isDeletedFromAdmin, false))
       .orderBy(desc(appointments.createdAt))
       .limit(limit);
     
     return result;
   }
 
-  // Review operations
   async getAllReviews(): Promise<Review[]> {
     return await db.select().from(reviews);
   }
@@ -420,14 +405,12 @@ export class DatabaseStorage implements IStorage {
     return review;
   }
 
-  // Course operations
   async getAllCourses(): Promise<Course[]> {
     const coursesData = await db.select().from(courses);
     return coursesData;
   }
 
   async createCourse(courseData: typeof courses.$inferInsert): Promise<Course> {
-    // Не передавать id, чтобы база сама назначила уникальный id
     const { id, ...data } = courseData as any;
     const [course] = await db
       .insert(courses)

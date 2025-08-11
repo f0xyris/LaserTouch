@@ -37,7 +37,6 @@ const Training = () => {
     return descriptions[category as keyof typeof descriptions] || t.laserEpilationCourseDesc;
   };
 
-  // Check for payment success
   useEffect(() => {
     if (search.includes("payment=success")) {
       toast({
@@ -45,7 +44,7 @@ const Training = () => {
         description: t.paymentSuccessMessage || "Thank you for purchasing the course!",
         duration: 5000,
       });
-      // Clean up URL
+      
       window.history.replaceState({}, document.title, "/training");
     }
   }, [search, toast, t]);

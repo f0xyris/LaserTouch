@@ -41,20 +41,15 @@ function Router() {
 }
 
 function AppContent() {
-  // Initialize cache refresh functionality
   useCacheRefresh();
   
-  // Use data preloader
   const { isPreloading } = useDataPreloader();
 
-  // Get current location to conditionally render footer
   const [location] = useLocation();
 
-  // Check for force preloader parameter in URL
   const urlParams = new URLSearchParams(window.location.search);
   const forcePreloader = urlParams.get('preloader') === 'true';
 
-  // Критические изображения для предзагрузки
   const criticalImages = [
     "https://images.unsplash.com/photo-1629909613654-28e377c37b09?ixlib=rb-4.0.3&auto=format&fit=crop&w=1200&h=800&q=70",
     "https://images.unsplash.com/photo-1544161515-4ab6ce6db874?ixlib=rb-4.0.3&auto=format&fit=crop&w=1200&h=800&q=70"
@@ -65,10 +60,8 @@ function AppContent() {
       <TooltipProvider>
         <ResourcePreloader images={criticalImages} />
         
-        {/* Show preloader while data is loading or if forced */}
         <AppPreloader isVisible={isPreloading || forcePreloader} />
         
-        {/* Main app content */}
         <div className={`min-h-screen bg-background ${(isPreloading || forcePreloader) ? 'hidden' : ''}`}>
           <Navigation />
           <Router />

@@ -29,10 +29,8 @@ export default function NotFound() {
   return (
     <div className="relative w-full min-h-[calc(100vh-64px)]">
       <div className="mx-auto flex max-w-5xl flex-col items-center px-6 py-20 md:py-28 min-h-[calc(100vh-64px)]">
-        {/* 404 Block */}
         <div className="relative mb-8 w-full select-none">
           <div className="relative mx-auto max-w-[900px]">
-            {/* SVG with hair mask effect */}
             <svg
               viewBox={`0 0 ${width} ${height}`}
               className="w-full h-auto"
@@ -70,7 +68,6 @@ export default function NotFound() {
                 </filter>
               </defs>
 
-              {/* Smooth digits in background */}
               <g filter="url(#soft-glow)">
                 <text
                   x="50%"
@@ -87,7 +84,6 @@ export default function NotFound() {
                 </text>
               </g>
 
-              {/* Hair strokes clipped by digits mask */}
               <g mask="url(#digits-mask)" className="text-black/60 dark:text-white/50">
                 {hairs.map((h) => (
                   <line
@@ -108,7 +104,6 @@ export default function NotFound() {
                 ))}
               </g>
 
-              {/* Moving laser head and subtle glow, above hair group */}
               <g className="laser-track">
                 <rect
                   x={0}
@@ -123,7 +118,6 @@ export default function NotFound() {
           </div>
         </div>
 
-        {/* Text */}
         <div className="mx-auto max-w-2xl text-center">
           <h1 className="text-balance text-2xl font-semibold text-gray-900 dark:text-white sm:text-3xl">
             {t.notFoundTitle}
@@ -133,7 +127,6 @@ export default function NotFound() {
           </p>
         </div>
 
-        {/* CTA */}
         <div className="mt-10">
           <Button
             asChild
@@ -144,7 +137,7 @@ export default function NotFound() {
                 {t.backToSmoothness}
                 <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
               </span>
-              {/* Glow sweep */}
+
               <span className="pointer-events-none absolute inset-0 bg-gradient-to-r from-pink-500 via-rose-500 to-orange-500 opacity-90" />
               <span className="pointer-events-none absolute inset-0 bg-[radial-gradient(120px_60px_at_0%_50%,rgba(255,255,255,0.35),transparent)] blur-md transition-transform group-hover:translate-x-[40%]" />
             </Link>
@@ -152,7 +145,6 @@ export default function NotFound() {
         </div>
       </div>
 
-      {/* Local styles for animations */}
       <style>{`
         .shave-line {
           stroke-dasharray: var(--len);

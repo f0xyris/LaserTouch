@@ -37,7 +37,6 @@ async function comparePasswords(supplied: string, stored: string) {
 }
 
 export function setupAuth(app: Express) {
-  // Используем PostgreSQL для хранения сессий в продакшене
   const PostgresStore = pgSimple(session);
   
   const sessionSettings: session.SessionOptions = {
@@ -64,7 +63,6 @@ export function setupAuth(app: Express) {
   app.use(passport.initialize());
   app.use(passport.session());
 
-  // Local Strategy
   passport.use(
     new LocalStrategy(
       { usernameField: "email" },
@@ -88,7 +86,6 @@ export function setupAuth(app: Express) {
     )
   );
 
-  // Google Strategy
   if (process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET) {
   
     passport.use(
@@ -96,30 +93,25 @@ export function setupAuth(app: Express) {
         {
           clientID: process.env.GOOGLE_CLIENT_ID,
           clientSecret: process.env.GOOGLE_CLIENT_SECRET,
-          // Используем универсальный BASE_URL
           callbackURL: `${process.env.BASE_URL}/api/auth/google/callback`,
         },
         async (accessToken, refreshToken, profile, done) => {
           try {
     
             
-            // Check if user exists with Google ID
             let user = await storage.getUserByGoogleId(profile.id);
             
             if (!user) {
-              // Check if user exists with email
               const email = profile.emails?.[0]?.value;
               if (email) {
                 user = await storage.getUserByEmail(email);
                 if (user) {
-                  // Update existing user with Google ID
                   user = await storage.updateUser(user.id, { googleId: profile.id });
                 }
               }
             }
 
             if (!user) {
-              // Create new user
               const email = profile.emails?.[0]?.value || "";
               user = await storage.createUser({
                 email,
@@ -127,8 +119,8 @@ export function setupAuth(app: Express) {
                 firstName: profile.name?.givenName || null,
                 lastName: profile.name?.familyName || null,
                 profileImageUrl: profile.photos?.[0]?.value || null,
-                password: null, // No password for OAuth users
-                isAdmin: email === "antip4uck.ia@gmail.com", // Make this email admin by default
+                password: null,
+                isAdmin: email === "antip4uck.ia@gmail.com",
               });
             }
 
@@ -152,11 +144,6 @@ export function setupAuth(app: Express) {
       done(error);
     }
   });
-
-  // Note: Registration route is now handled by JWT endpoints in server/routes.ts
-
-  // Note: Login, logout, and user routes are now handled by JWT endpoints in server/routes.ts
-  // This setupAuth function only configures Passport.js for compatibility
 }
 
 export const isAuthenticated = (req: any, res: any, next: any) => {

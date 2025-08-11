@@ -11,12 +11,10 @@ if (!process.env.DATABASE_URL) {
 export const pool = new Pool({ connectionString: process.env.DATABASE_URL });
 export const db = drizzle(pool, { schema });
 
-// Функция для применения миграций
 async function applyMigrations(pool: Pool) {
   try {
     const client = await pool.connect();
-    
-    // Проверяем, есть ли поле is_deleted_from_admin
+
     const checkResult = await client.query(`
       SELECT column_name 
       FROM information_schema.columns 
@@ -25,17 +23,13 @@ async function applyMigrations(pool: Pool) {
     `);
     
     if (checkResult.rows.length === 0) {
-      // Добавляем поле
       await client.query(`
         ALTER TABLE appointments 
         ADD COLUMN is_deleted_from_admin boolean DEFAULT false
       `);
 
-    } else {
-      // Field already exists
     }
     
-    // Исправляем старые записи
     const updateResult = await client.query(`
       UPDATE appointments 
       SET is_deleted_from_admin = true 
@@ -52,5 +46,4 @@ async function applyMigrations(pool: Pool) {
   }
 }
 
-// Применяем миграции при инициализации
 applyMigrations(pool);

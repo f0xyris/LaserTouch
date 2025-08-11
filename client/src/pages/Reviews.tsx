@@ -10,13 +10,12 @@ import { useQuery } from "@tanstack/react-query";
 
 const Reviews = () => {
   const { t } = useLanguage();
-  const { user, isLoading } = useAuth(); // 1. Получаем user
+  const { user, isLoading } = useAuth();
   type ReviewForm = { name: string; comment: string; rating: number };
   const [form, setForm] = useState<ReviewForm>({ name: "", comment: "", rating: 0 });
   const [submitting, setSubmitting] = useState(false);
   const [pendingReviews, setPendingReviews] = useState<ReviewForm[]>([]);
 
-  // Получаем отзывы с сервера используя React Query для лучшей производительности
   const { data: reviews = [], isLoading: loadingReviews } = useQuery({
     queryKey: ["/api/reviews"],
     queryFn: async () => {
@@ -25,12 +24,11 @@ const Reviews = () => {
       const data = await response.json();
       return Array.isArray(data) ? data : [];
     },
-    staleTime: 30 * 1000, // 30 секунд - данные считаются свежими
+    staleTime: 30 * 1000,
     refetchOnWindowFocus: true,
     refetchOnMount: true,
   });
 
-  // Добавляем новые отзывы, которые "на модерации"
   type ReviewCard = ReviewForm & { id: string | number; pending?: boolean };
   const allReviews: ReviewCard[] = [
     ...pendingReviews.map((r, idx) => ({
@@ -44,18 +42,15 @@ const Reviews = () => {
     ...(Array.isArray(reviews) ? reviews : []),
   ];
 
-  // 2. Если user есть, подставляем имя и фамилию при первом рендере или изменении user
   React.useEffect(() => {
     if (user && (user.firstName || user.lastName)) {
       setForm(f => ({ ...f, name: `${user.firstName || ''} ${user.lastName || ''}`.trim() }));
     }
   }, [user]);
 
-  // Для hover-эффекта звёзд
   const [hoveredStar, setHoveredStar] = useState<number | null>(null);
 
   const renderStars = (rating: number, onSelect?: (n: number) => void) => {
-    // Если onSelect не передан — это карточка отзыва, всегда 5 золотых звёзд
     if (!onSelect) {
       return Array.from({ length: 5 }, (_, i) => (
         <Star
@@ -68,11 +63,8 @@ const Reviews = () => {
         />
       ));
     }
-    // Для формы — интерактивные звёзды
     return Array.from({ length: 5 }, (_, i) => {
-      // Если звезда уже выбрана — всегда золотая
       let isFilled = i < rating;
-      // Если наводим на звезду с большим индексом, подсвечиваем только те, что ещё не выбраны
       if (hoveredStar !== null) {
         if (hoveredStar > rating) {
           isFilled = i < hoveredStar && i >= rating ? true : i < rating;
@@ -100,7 +92,6 @@ const Reviews = () => {
     });
   };
 
-  // Обработка отправки формы
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!form.comment.trim()) return;
@@ -127,7 +118,6 @@ const Reviews = () => {
         setPendingReviews([{ ...form }, ...pendingReviews]);
         setForm({ name: user ? `${user.firstName || ''} ${user.lastName || ''}`.trim() : "", comment: "", rating: 5 });
       } else if (res.status === 401) {
-        // Not authenticated – suggest login
         alert('Пожалуйста, войдите, чтобы оставить отзыв.');
       }
     } finally {
@@ -142,7 +132,6 @@ const Reviews = () => {
           <h1 className="text-2xl sm:text-3xl font-bold text-mystical-500 dark:text-mystical-400 mb-2 sm:mb-4">{t.reviewsTitle}</h1>
           <p className="text-muted-foreground dark:text-muted-foreground text-sm sm:text-base">{t.reviewsDescription}</p>
         </div>
-      {/* Форма для нового отзыва */}
       <section className="mb-10 bg-background dark:bg-deep-900 rounded-lg shadow-xl border border-muted-foreground/10 p-0">
         <div className="p-4 sm:p-6">
           <h2 className="text-xl font-semibold text-mystical-600 dark:text-mystical-300 mb-2">{t.reviewFormTitle}</h2>
@@ -181,9 +170,7 @@ const Reviews = () => {
             </Button>
           </form>
         </div>
-        {/* В будущем: здесь можно показывать статус отправки/модерации */}
       </section>
-      {/* Список отзывов */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8">
         {loadingReviews ? (
           <>
@@ -218,7 +205,7 @@ const Reviews = () => {
               <CardContent className="p-4 sm:p-6">
                 <div className="flex items-center mb-4">
                   <div className="w-12 h-12 bg-gradient-to-r from-mystical-600 to-accent-600 dark:from-mystical-500 dark:to-accent-500 rounded-full flex items-center justify-center shadow-lg">
-                    <User className="text-white h-6 w-6" />
+                    <User className=" h-6 w-6" />
                   </div>
                   <div className="ml-4">
                     <h3 className="font-semibold text-mystical-700 dark:text-mystical-400">{review.name}</h3>
@@ -236,7 +223,6 @@ const Reviews = () => {
           ))
         )}
       </div>
-      {/* В будущем: отзывы будут появляться только после одобрения в админке */}
       </div>
     </main>
   );

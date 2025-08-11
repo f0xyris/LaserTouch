@@ -815,7 +815,7 @@ const Admin = () => {
   }
 
   return (
-    <main className="admin-page min-h-[calc(100vh-64px)] flex items-center justify-center px-2 sm:px-4 lg:px-8 py-4 sm:py-8 dark:bg-deep-900">
+    <main className="admin-page min-h-[calc(100vh-64px)] flex items-center justify-center px-2 sm:px-4 lg:px-8 py-4 sm:py-8 dark:bg-deep-900 overflow-x-hidden">
       <div className="max-w-7xl w-full">
         {isDemo && (
           <div className="mb-4 rounded-md border border-amber-300 bg-amber-50 dark:bg-amber-900/20 text-amber-800 dark:text-amber-300 px-4 py-3">
@@ -902,7 +902,7 @@ const Admin = () => {
           <ChevronDown className="chevron absolute right-3 top-[20%] w-7 h-7 text-mystical-500 pointer-events-none transition-transform duration-200" />
         </div>
         {/* TabsList только для md+ */}
-        <TabsList className="admin-tabs-nav flex flex-row w-full gap-1 md:gap-2 mb-2 md:mb-4 overflow-x-auto whitespace-nowrap scrollbar-hide hidden md:flex">
+        <TabsList className="admin-tabs-nav hidden md:flex md:flex-row w-full gap-1 md:gap-2 mb-2 md:mb-4 overflow-x-auto whitespace-nowrap scrollbar-hide">
           <TabsTrigger value="users" className="flex items-center gap-2 px-2 py-2 sm:py-3 text-xs sm:text-base whitespace-nowrap data-[state=active]:text-mystical-600 dark:data-[state=active]:text-mystical-100">
             <Users className="h-4 w-4 sm:h-5 sm:w-5 text-mystical-600 data-[state=active]:!text-white hidden lg:inline" />
             {t.userManagement}
@@ -936,7 +936,7 @@ const Admin = () => {
                 {t.userManagement}
               </CardDescription>
         </CardHeader>
-        <CardContent>
+        <CardContent className="min-h-[360px] sm:min-h-[420px]">
           {/* Search */}
           <div className="mb-4 sm:mb-6">
             <Label htmlFor="search" className="sr-only">
@@ -960,7 +960,7 @@ const Admin = () => {
             {filteredUsers.map((user) => (
               <div key={user.id} className="rounded-lg border bg-card p-3 flex flex-col gap-2 shadow-sm">
                 <div className="flex items-center gap-3">
-                  <div className="w-8 h-8 bg-mystical-500 rounded-full flex items-center justify-center">
+                  <div className="w-8 h-8 bg-mystical-500 rounded-full flex items-center justify-center text-white">
                     <span className="text-white text-sm font-medium">
                       {user.firstName ? user.firstName.charAt(0).toUpperCase() : user.email.charAt(0).toUpperCase()}
                     </span>
@@ -1035,7 +1035,7 @@ const Admin = () => {
                   <tr key={user.id} className="border-b border-mystical-100 dark:border-mystical-800">
                     <td className="py-4 text-mystical-700 dark:text-mystical-300">
                       <div className="flex items-center space-x-3">
-                        <div className="w-8 h-8 bg-mystical-500 rounded-full flex items-center justify-center">
+                        <div className="w-8 h-8 bg-mystical-500 rounded-full flex items-center justify-center text-white">
                           <span className="text-white text-sm font-medium">
                             {user.firstName ? user.firstName.charAt(0).toUpperCase() : user.email.charAt(0).toUpperCase()}
                           </span>
@@ -1115,7 +1115,7 @@ const Admin = () => {
             {t.appointments}
           </CardDescription>
         </CardHeader>
-        <CardContent>
+        <CardContent className="min-h-[360px] sm:min-h-[420px]">
           {recentLoading ? (
             <div className="space-y-4">
               {[...Array(3)].map((_, index) => (
@@ -1138,7 +1138,7 @@ const Admin = () => {
           ) : (
             <div className="space-y-4">
               {recentAppointments?.map((appointment: any) => (
-                <div key={appointment.id} className="flex items-center justify-between p-4 border rounded-lg">
+                <div key={appointment.id} className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4 border rounded-lg">
                   <div className="flex items-center gap-3">
                     <div className="w-10 h-10 bg-mystical-500 rounded-full flex items-center justify-center">
                       <UserIcon className="h-5 w-5 text-white" />
@@ -1161,7 +1161,7 @@ const Admin = () => {
                       </p>
                     </div>
                   </div>
-                  <div className="flex items-center gap-2">
+                  <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto justify-end">
                     <Badge variant={
                       appointment.status === 'completed' ? 'default' :
                       appointment.status === 'confirmed' ? 'secondary' :
@@ -1185,7 +1185,7 @@ const Admin = () => {
                       </Button>
                     )}
                     {appointment.status === 'pending' && (
-                      <div className="flex gap-1">
+                      <div className="flex flex-wrap gap-1 w-full sm:w-auto justify-end">
                         <Button
                           size="sm"
                           variant="outline"
@@ -1207,7 +1207,7 @@ const Admin = () => {
                       </div>
                     )}
                     {appointment.status === 'confirmed' && (
-                      <div className="flex gap-1">
+                      <div className="flex flex-wrap gap-1 w-full sm:w-auto justify-end">
                         <Button
                           size="sm"
                           variant="outline"
@@ -1257,7 +1257,7 @@ const Admin = () => {
             <CardDescription>{t.calendarDesc}</CardDescription>
           )}
         </CardHeader>
-        <CardContent>
+        <CardContent className="min-h-[360px] sm:min-h-[420px]">
           <div className="grid md:grid-cols-2 gap-6">
             <div>
               <Calendar
@@ -1577,7 +1577,7 @@ const Admin = () => {
             {t.moderationReviewsDesc}
           </CardDescription>
         </CardHeader>
-        <CardContent>
+        <CardContent className="min-h-[360px] sm:min-h-[420px]">
           {reviewsTab.loading ? (
             <div className="text-center py-8">{t.loadingReviews}</div>
           ) : reviewsTab.data.length === 0 ? (
@@ -1692,7 +1692,7 @@ const Admin = () => {
             {t.editPricesDesc}
           </CardDescription>
         </CardHeader>
-        <CardContent>
+        <CardContent className="min-h-[360px] sm:min-h-[420px]">
           <PricesEditor />
         </CardContent>
       </Card>

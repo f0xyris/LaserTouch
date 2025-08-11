@@ -1,6 +1,5 @@
 import nodemailer from 'nodemailer';
 
-// Email configuration with OAuth2 support
 const emailConfig = {
   service: 'gmail',
   auth: {
@@ -13,7 +12,6 @@ const emailConfig = {
   }
 };
 
-// Fallback to SMTP if OAuth2 credentials are not available
 const smtpConfig = {
   host: process.env.SMTP_HOST || 'smtp.gmail.com',
   port: parseInt(process.env.SMTP_PORT || '587'),
@@ -24,12 +22,10 @@ const smtpConfig = {
   }
 };
 
-// Create transporter with OAuth2 or fallback to SMTP
 const transporter = nodemailer.createTransport(
   emailConfig.auth.clientId ? emailConfig as any : smtpConfig
 );
 
-// Email templates
 const emailTemplates = {
   appointmentSubmitted: {
     subject: {
@@ -1279,7 +1275,6 @@ const emailTemplates = {
   }
 };
 
-// Helper function to format date
 function formatDate(date: Date, language: string = 'ua'): string {
   const options: Intl.DateTimeFormatOptions = {
     year: 'numeric',
@@ -1297,7 +1292,6 @@ function formatDate(date: Date, language: string = 'ua'): string {
   return date.toLocaleDateString(locales[language as keyof typeof locales] || 'uk-UA', options);
 }
 
-// Helper function to format time
 function formatTime(date: Date, language: string = 'ua'): string {
   const options: Intl.DateTimeFormatOptions = {
     hour: '2-digit',
@@ -1314,21 +1308,18 @@ function formatTime(date: Date, language: string = 'ua'): string {
   return date.toLocaleTimeString(locales[language as keyof typeof locales] || 'uk-UA', options);
 }
 
-// Main email sending function
 async function sendEmail(to: string, template: keyof typeof emailTemplates, data: any, language: string = 'ua') {
   try {
     const emailTemplate = emailTemplates[template];
     const subject = emailTemplate.subject[language as keyof typeof emailTemplate.subject] || emailTemplate.subject.ua;
     
     let body = emailTemplate.body[language as keyof typeof emailTemplate.body] || emailTemplate.body.ua;
-    
-    // Replace placeholders with actual data
+
     Object.keys(data).forEach(key => {
       const placeholder = `{${key}}`;
       body = body.replace(new RegExp(placeholder, 'g'), data[key]);
     });
-    
-    // Replace SITE_URL placeholder
+
     body = body.replace(/{SITE_URL}/g, process.env.SITE_URL || 'https://laser-touch.vercel.app');
     
     const mailOptions = {
@@ -1347,7 +1338,6 @@ async function sendEmail(to: string, template: keyof typeof emailTemplates, data
   }
 }
 
-// Specific email functions
 export async function sendAppointmentSubmittedEmail(
   userEmail: string, 
   serviceName: string, 
@@ -1415,7 +1405,6 @@ export async function sendAdminAppointmentNotification(
   return sendEmail(adminEmail, 'adminAppointmentNotification', data, language);
 }
 
-// Test email configuration
 export async function testEmailConfiguration() {
   try {
     await transporter.verify();
