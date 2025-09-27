@@ -9,6 +9,10 @@
       }
     },
     {
+      "src": "/api/users/(\\d+)/admin",
+      "dest": "/api/users-admin.ts"
+    },
+    {
       "src": "api/**/*.ts",
       "use": "@vercel/node"
     }
@@ -24,6 +28,10 @@
     },
     {
       "src": "/api/reviews",
+      "dest": "/api/reviews.ts"
+    },
+    {
+      "src": "/api/reviews/(.*)",
       "dest": "/api/reviews.ts"
     },
     {
