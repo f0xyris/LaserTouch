@@ -746,28 +746,66 @@ const Admin = () => {
       const response = await apiRequest("PUT", `/api/users/${userId}/admin`, { isAdmin });
       return response.json();
     },
+    onMutate: async ({ userId, isAdmin }: { userId: number; isAdmin: boolean }) => {
+      await queryClient.cancelQueries({ queryKey: ["/api/users"] });
+      const previousUsers = queryClient.getQueryData<any[]>(["/api/users"]);
+      queryClient.setQueryData(["/api/users"], (old: any) => {
+        if (!old || !Array.isArray(old)) return old;
+        return old.map((u: any) => (u.id === userId ? { ...u, isAdmin } : u));
+      });
+      return { previousUsers } as { previousUsers?: any[] };
+    },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/users"] });
       toast({
         title: t.success || t.adminStatusUpdated || "Success",
         description: t.adminStatusUpdated || "Admin status updated",
       });
     },
-    onError: (error) => {
+    onError: (error, _vars, context) => {
+      if (context && context.previousUsers) {
+        queryClient.setQueryData(["/api/users"], context.previousUsers);
+      }
       toast({
         title: t.error || t.adminStatusUpdateFailed || "Error",
         description: t.adminStatusUpdateFailed || "Failed to update admin status",
         variant: "destructive",
       });
     },
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/users"] });
+    },
   });
 
-  // Filter users based on search term
-  const filteredUsers = users?.filter(user => 
+  // Preserve visual order of users (stable ordering by first loaded sequence)
+  const [userOrder, setUserOrder] = useState<number[]>([]);
+  React.useEffect(() => {
+    if (!users || users.length === 0) return;
+    setUserOrder(prev => {
+      if (!prev || prev.length === 0) {
+        return users.map(u => u.id);
+      }
+      // Append any new user ids at the end, keep existing order intact
+      const existing = new Set(prev);
+      const additions = users.map(u => u.id).filter(id => !existing.has(id));
+      return additions.length ? [...prev, ...additions] : prev;
+    });
+  }, [users]);
+
+  const orderedUsers = React.useMemo(() => {
+    if (!users || users.length === 0) return [] as any[];
+    if (!userOrder || userOrder.length === 0) return users;
+    const indexById = new Map<number, number>(userOrder.map((id, idx) => [id, idx]));
+    const known = users.filter(u => indexById.has(u.id)).sort((a, b) => (indexById.get(a.id)! - indexById.get(b.id)!));
+    const unknown = users.filter(u => !indexById.has(u.id));
+    return [...known, ...unknown];
+  }, [users, userOrder]);
+
+  // Filter users based on search term but keep stable order
+  const filteredUsers = orderedUsers.filter(user => 
     user.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
     user.firstName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
     user.lastName?.toLowerCase().includes(searchTerm.toLowerCase())
-  ) || [];
+  );
 
   const adminCount = users?.filter(user => user.isAdmin).length || 0;
   const totalUsers = users?.length || 0;
@@ -960,11 +998,15 @@ const Admin = () => {
             {filteredUsers.map((user) => (
               <div key={user.id} className="rounded-lg border bg-card p-3 flex flex-col gap-2 shadow-sm">
                 <div className="flex items-center gap-3">
-                  <div className="w-8 h-8 bg-mystical-500 rounded-full flex items-center justify-center text-white">
-                    <span className="text-white text-sm font-medium">
-                      {user.firstName ? user.firstName.charAt(0).toUpperCase() : user.email.charAt(0).toUpperCase()}
-                    </span>
-                  </div>
+                  {user.profileImageUrl ? (
+                    <img src={user.profileImageUrl} alt={user.firstName || user.email} className="w-8 h-8 rounded-full object-cover" />
+                  ) : (
+                    <div className="w-8 h-8 bg-mystical-500 rounded-full flex items-center justify-center text-white">
+                      <span className="text-white text-sm font-medium">
+                        {user.firstName ? user.firstName.charAt(0).toUpperCase() : user.email.charAt(0).toUpperCase()}
+                      </span>
+                    </div>
+                  )}
                   <div>
                     <div className="font-medium text-mystical-700 dark:text-mystical-300">
                       {user.firstName && user.lastName 
@@ -976,17 +1018,11 @@ const Admin = () => {
                   </div>
                 </div>
                 <div className="flex items-center gap-2 mt-1">
-                  <Badge variant={user.isAdmin ? "default" : "secondary"} className="flex items-center gap-1 w-fit">
+                  <Badge variant={user.isAdmin ? "default" : "secondary"} className="flex items-center gap-1 w-8 sm:w-[120px] justify-center px-0">
                     {user.isAdmin ? (
-                      <>
-                        <Crown className="h-3 w-3" />
-                        {t.admin || "Admin"}
-                      </>
+                      <Crown className="h-3 w-3" />
                     ) : (
-                      <>
-                        <UserCheck className="h-3 w-3" />
-                        {t.user || "User"}
-                      </>
+                      <UserCheck className="h-3 w-3" />
                     )}
                   </Badge>
                   <Switch
@@ -1025,7 +1061,7 @@ const Admin = () => {
                   <th className="text-left py-2 sm:py-3 text-mystical-500 dark:text-mystical-400 font-semibold">
                     {t.role}
                   </th>
-                  <th className="text-left py-2 sm:py-3 text-mystical-500 dark:text-mystical-400 font-semibold">
+                  <th className="text-left py-2 sm:py-3 text-mystical-500 dark:text-mystical-400 font-semibold w-[140px]">
                     {t.adminAccess}
                   </th>
                 </tr>
@@ -1035,21 +1071,22 @@ const Admin = () => {
                   <tr key={user.id} className="border-b border-mystical-100 dark:border-mystical-800">
                     <td className="py-4 text-mystical-700 dark:text-mystical-300">
                       <div className="flex items-center space-x-3">
-                        <div className="w-8 h-8 bg-mystical-500 rounded-full flex items-center justify-center text-white">
-                          <span className="text-white text-sm font-medium">
-                            {user.firstName ? user.firstName.charAt(0).toUpperCase() : user.email.charAt(0).toUpperCase()}
-                          </span>
-                        </div>
+                        {user.profileImageUrl ? (
+                          <img src={user.profileImageUrl} alt={user.firstName || user.email} className="w-8 h-8 rounded-full object-cover" />
+                        ) : (
+                          <div className="w-8 h-8 bg-mystical-500 rounded-full flex items-center justify-center text-white">
+                            <span className="text-white text-sm font-medium">
+                              {(user.firstName ? user.firstName.charAt(0) : user.email.charAt(0)).toUpperCase()}
+                            </span>
+                          </div>
+                        )}
                         <div>
                           <div className="font-medium">
-                            {user.firstName && user.lastName 
-                              ? `${user.firstName} ${user.lastName}`
-                              : user.email
-                            }
+                            {user.firstName && user.lastName ? `${user.firstName} ${user.lastName}` : user.email}
                           </div>
-                          {user.firstName && user.lastName && (
+                          {user.firstName && user.lastName ? (
                             <div className="text-sm text-muted-foreground break-all">{user.email}</div>
-                          )}
+                          ) : null}
                         </div>
                       </div>
                     </td>
@@ -1057,19 +1094,13 @@ const Admin = () => {
                     <td className="py-4">
                       <Badge variant={user.isAdmin ? "default" : "secondary"} className="flex items-center gap-1 w-fit">
                         {user.isAdmin ? (
-                          <>
-                            <Crown className="h-3 w-3" />
-                            {t.admin || "Admin"}
-                          </>
+                          <Crown className="h-3 w-3" />
                         ) : (
-                          <>
-                            <UserCheck className="h-3 w-3" />
-                            {t.user || "User"}
-                          </>
+                          <UserCheck className="h-3 w-3" />
                         )}
                       </Badge>
                     </td>
-                    <td className="py-4">
+                    <td className="py-4 w-[140px]">
                       <div className="flex items-center space-x-2">
                         <Switch
                           checked={user.isAdmin ?? false}
@@ -1078,9 +1109,6 @@ const Admin = () => {
                           }}
                           disabled={isDemo || updateAdminMutation.isPending || user.id === currentUser.id}
                         />
-                        <span className="text-sm text-muted-foreground">
-                          {user.isAdmin ? (t.admin || "Admin") : (t.user || "User")}
-                        </span>
                         {user.id === currentUser.id && (
                           <span className="text-xs text-amber-600 dark:text-amber-400">
                             (You)

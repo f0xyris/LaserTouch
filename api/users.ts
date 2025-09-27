@@ -145,6 +145,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           first_name, 
           last_name, 
           phone, 
+          profile_image_url,
           is_admin, 
           created_at, 
           updated_at
@@ -170,6 +171,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
             firstName: maskName(user.first_name),
             lastName: maskName(user.last_name),
             phone: user.phone ? `${String(user.phone).slice(0, 2)}***` : null,
+            profileImageUrl: null,
             isAdmin: user.is_admin,
             createdAt: user.created_at,
             updatedAt: user.updated_at,
@@ -182,6 +184,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           firstName: user.first_name,
           lastName: user.last_name,
           phone: user.phone,
+          profileImageUrl: user.profile_image_url,
           isAdmin: user.is_admin,
           createdAt: user.created_at,
           updatedAt: user.updated_at
