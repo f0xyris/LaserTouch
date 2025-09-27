@@ -15,8 +15,8 @@
   ],
   "routes": [
     {
-      "src": "/api/users/(.*)/admin",
-      "dest": "/api/users-admin.ts"
+      "src": "/api/users/(\\d+)/admin",
+      "dest": "/api/users.ts?id=$1&__admin=1"
     },
     {
       "src": "/api/users",

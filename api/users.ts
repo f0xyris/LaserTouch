@@ -32,7 +32,7 @@ function extractTokenFromRequest(req: any): string | null {
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   // Enable CORS
   res.setHeader('Access-Control-Allow-Origin', 'https://laser-touch.vercel.app');
-  res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
+  res.setHeader('Access-Control-Allow-Methods', 'GET, PUT, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
   res.setHeader('Access-Control-Allow-Credentials', 'true');
   
@@ -40,11 +40,68 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     return res.status(200).end();
   }
   
-  if (req.method !== 'GET') {
-    return res.status(405).json({ error: 'Method not allowed' });
-  }
+  // If routed from /api/users/:id/admin, __admin=1 and id will be present via vercel.json
 
   try {
+    // Admin PUT handler: /api/users/:id/admin -> id in query, body { isAdmin }
+    if (req.method === 'PUT' && req.query.__admin === '1') {
+      const token = extractTokenFromRequest(req);
+      if (!token) {
+        return res.status(401).json({ error: 'No token provided' });
+      }
+      const payload = verifyToken(token);
+      if (!payload || !payload.isAdmin) {
+        return res.status(403).json({ error: 'Admin access required' });
+      }
+      const isDemo = payload.isDemo === true;
+      const id = Array.isArray(req.query.id) ? req.query.id[0] : req.query.id;
+      const { isAdmin } = (req.body || {}) as { isAdmin?: boolean };
+      if (!id) {
+        return res.status(400).json({ error: 'User ID is required' });
+      }
+      if (typeof isAdmin !== 'boolean') {
+        return res.status(400).json({ error: 'isAdmin must be a boolean' });
+      }
+
+      if (isDemo) {
+        return res.status(200).json({ id: Number(id), isAdmin });
+      }
+
+      if (!process.env.DATABASE_URL) {
+        return res.status(500).json({ error: 'Database configuration missing' });
+      }
+      const pool = new Pool({
+        connectionString: process.env.DATABASE_URL,
+        ssl: { rejectUnauthorized: false }
+      });
+      const client = await pool.connect();
+      try {
+        const result = await client.query(
+          'UPDATE users SET is_admin = $1, updated_at = NOW() WHERE id = $2 RETURNING id, email, first_name, last_name, phone, is_admin, created_at, updated_at',
+          [isAdmin, id]
+        );
+        if (result.rows.length === 0) {
+          return res.status(404).json({ error: 'User not found' });
+        }
+        const u = result.rows[0];
+        return res.status(200).json({
+          id: u.id,
+          email: u.email,
+          firstName: u.first_name,
+          lastName: u.last_name,
+          phone: u.phone,
+          isAdmin: u.is_admin,
+          createdAt: u.created_at,
+          updatedAt: u.updated_at
+        });
+      } finally {
+        client.release();
+        await pool.end();
+      }
+    }
+    if (req.method !== 'GET') {
+      return res.status(405).json({ error: 'Method not allowed' });
+    }
     console.log('Users endpoint called');
     console.log('Request headers:', req.headers);
     
