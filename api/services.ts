@@ -125,19 +125,40 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
             demo: true,
           });
         }
-        
-        const result = await client.query(`
-          INSERT INTO services (name, description, price, duration, is_active, created_at, updated_at)
-          VALUES ($1, $2, $3, $4, $5, NOW(), NOW())
-          RETURNING id
-        `, [
+
+        // Detect available columns
+        const structure = await client.query(`
+          SELECT column_name FROM information_schema.columns WHERE table_name = 'services'
+        `);
+        const cols = structure.rows.map((r: any) => r.column_name);
+
+        // Base columns always present in our schema
+        const insertCols: string[] = ['name', 'description', 'price', 'duration'];
+        const insertParams: any[] = [
           JSON.stringify(name || { ua: '', en: '', pl: '' }),
           JSON.stringify(description || { ua: '', en: '', pl: '' }),
           price || 0,
           duration || 60,
-          true
-        ]);
-        
+        ];
+        let placeholders = ['$1', '$2', '$3', '$4'];
+
+        // Optional columns
+        if (cols.includes('is_active')) {
+          insertCols.push('is_active');
+          insertParams.push(true);
+          placeholders.push(`$${insertParams.length}`);
+        }
+        if (cols.includes('created_at')) {
+          insertCols.push('created_at');
+          placeholders.push('NOW()');
+        }
+        if (cols.includes('updated_at')) {
+          insertCols.push('updated_at');
+          placeholders.push('NOW()');
+        }
+
+        const insertSql = `INSERT INTO services (${insertCols.join(', ')}) VALUES (${placeholders.join(', ')}) RETURNING id`;
+        const result = await client.query(insertSql, insertParams);
         res.status(201).json({ id: result.rows[0].id });
       } else if (req.method === 'PUT') {
         // Update service
@@ -145,18 +166,26 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         if (isDemo) {
           return res.status(200).json({ success: true, demo: true });
         }
-        
-        await client.query(`
-          UPDATE services 
-          SET name = $1, description = $2, price = $3, duration = $4, updated_at = NOW()
-          WHERE id = $5
-        `, [
+        // Detect available columns
+        const structure = await client.query(`
+          SELECT column_name FROM information_schema.columns WHERE table_name = 'services'
+        `);
+        const cols = structure.rows.map((r: any) => r.column_name);
+
+        let updateSql = `UPDATE services SET name = $1, description = $2, price = $3, duration = $4`;
+        const params: any[] = [
           JSON.stringify(name || { ua: '', en: '', pl: '' }),
           JSON.stringify(description || { ua: '', en: '', pl: '' }),
           price || 0,
           duration || 60,
-          id
-        ]);
+        ];
+        if (cols.includes('updated_at')) {
+          updateSql += `, updated_at = NOW()`;
+        }
+        updateSql += ` WHERE id = $${params.length + 1}`;
+        params.push(id);
+
+        await client.query(updateSql, params);
         
         res.status(200).json({ success: true });
       } else if (req.method === 'DELETE') {
@@ -165,12 +194,20 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         if (isDemo) {
           return res.status(200).json({ success: true, demo: true });
         }
-        
-        await client.query(`
-          UPDATE services 
-          SET is_active = false, updated_at = NOW()
-          WHERE id = $1
-        `, [id]);
+        // Detect available columns
+        const structure = await client.query(`
+          SELECT column_name FROM information_schema.columns WHERE table_name = 'services'
+        `);
+        const cols = structure.rows.map((r: any) => r.column_name);
+
+        if (cols.includes('is_active')) {
+          let sql = `UPDATE services SET is_active = false`;
+          if (cols.includes('updated_at')) sql += `, updated_at = NOW()`;
+          sql += ` WHERE id = $1`;
+          await client.query(sql, [id]);
+        } else {
+          await client.query(`DELETE FROM services WHERE id = $1`, [id]);
+        }
         
         res.status(200).json({ success: true });
       }

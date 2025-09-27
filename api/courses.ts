@@ -142,12 +142,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     }
   }
 
-  // Create or GET /api/courses
+  // Write operations for courses with dynamic columns
   if (pathname === '/api/courses' && req.method === 'POST') {
     const payload = verifyToken(extractToken(req));
     const isDemo = !!payload?.isDemo;
+    const { name, price, duration, description, category, imageUrl } = req.body as any;
     if (isDemo) {
-      const { name, price, duration, description, category, imageUrl } = req.body as any;
       return res.status(201).json({
         id: Math.floor(Math.random() * 1000000) + 1000,
         name: name || { ua: '', en: '', pl: '' },
@@ -159,9 +159,104 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         demo: true,
       });
     }
-    // For Hobby plan, we avoid implementing write here fully. Return 405.
-    return res.status(405).json({ error: 'Method not allowed on serverless in this deployment' });
+    if (!process.env.DATABASE_URL) {
+      return res.status(500).json({ error: 'Database configuration missing' });
+    }
+    const pool = new Pool({ connectionString: process.env.DATABASE_URL, ssl: { rejectUnauthorized: false } });
+    const client = await pool.connect();
+    try {
+      const structure = await client.query(`SELECT column_name FROM information_schema.columns WHERE table_name = 'courses'`);
+      const cols = structure.rows.map((r: any) => r.column_name);
+      const insertCols: string[] = [];
+      const params: any[] = [];
+      const placeholders: string[] = [];
+      const add = (col: string, value: any, raw = false) => {
+        insertCols.push(col);
+        if (raw) {
+          placeholders.push(value);
+        } else {
+          params.push(value);
+          placeholders.push(`$${params.length}`);
+        }
+      };
+      if (cols.includes('name')) add('name', JSON.stringify(name || { ua: '', en: '', pl: '' }));
+      if (cols.includes('description')) add('description', JSON.stringify(description || { ua: '', en: '', pl: '' }));
+      if (cols.includes('price')) add('price', price || 0);
+      if (cols.includes('duration')) add('duration', duration || 60);
+      if (cols.includes('category')) add('category', category || 'custom');
+      if (cols.includes('image_url')) add('image_url', imageUrl || null);
+      if (cols.includes('image')) add('image', imageUrl || null);
+      if (cols.includes('created_at')) add('created_at', 'NOW()', true);
+      if (cols.includes('updated_at')) add('updated_at', 'NOW()', true);
+      const sql = `INSERT INTO courses (${insertCols.join(', ')}) VALUES (${placeholders.join(', ')}) RETURNING id`;
+      const result = await client.query(sql, params);
+      return res.status(201).json({ id: result.rows[0].id });
+    } finally {
+      client.release();
+      await pool.end();
+    }
   }
+  // Update by id
+  if (pathname.startsWith('/api/courses/') && req.method === 'PUT') {
+    const payload = verifyToken(extractToken(req));
+    const isDemo = !!payload?.isDemo;
+    if (isDemo) return res.status(200).json({ success: true, demo: true });
+    const id = Number(pathname.split('/').pop());
+    const { name, description, price, duration, category, imageUrl } = req.body as any;
+    if (!process.env.DATABASE_URL) return res.status(500).json({ error: 'Database configuration missing' });
+    const pool = new Pool({ connectionString: process.env.DATABASE_URL, ssl: { rejectUnauthorized: false } });
+    const client = await pool.connect();
+    try {
+      const structure = await client.query(`SELECT column_name FROM information_schema.columns WHERE table_name = 'courses'`);
+      const cols = structure.rows.map((r: any) => r.column_name);
+      const sets: string[] = [];
+      const params: any[] = [];
+      const add = (expr: string, value: any) => { params.push(value); sets.push(`${expr} = $${params.length}`); };
+      if (cols.includes('name') && name !== undefined) add('name', JSON.stringify(name));
+      if (cols.includes('description') && description !== undefined) add('description', JSON.stringify(description));
+      if (cols.includes('price') && price !== undefined) add('price', price);
+      if (cols.includes('duration') && duration !== undefined) add('duration', duration);
+      if (cols.includes('category') && category !== undefined) add('category', category);
+      if (cols.includes('image_url') && imageUrl !== undefined) add('image_url', imageUrl);
+      if (cols.includes('image') && imageUrl !== undefined) add('image', imageUrl);
+      if (cols.includes('updated_at')) sets.push('updated_at = NOW()');
+      if (sets.length === 0) return res.status(400).json({ error: 'No fields to update' });
+      const sql = `UPDATE courses SET ${sets.join(', ')} WHERE id = $${params.length + 1}`;
+      params.push(id);
+      await client.query(sql, params);
+      return res.status(200).json({ success: true });
+    } finally {
+      client.release();
+      await pool.end();
+    }
+  }
+  // Delete by id
+  if (pathname.startsWith('/api/courses/') && req.method === 'DELETE') {
+    const payload = verifyToken(extractToken(req));
+    const isDemo = !!payload?.isDemo;
+    if (isDemo) return res.status(200).json({ success: true, demo: true });
+    const id = Number(pathname.split('/').pop());
+    if (!process.env.DATABASE_URL) return res.status(500).json({ error: 'Database configuration missing' });
+    const pool = new Pool({ connectionString: process.env.DATABASE_URL, ssl: { rejectUnauthorized: false } });
+    const client = await pool.connect();
+    try {
+      const structure = await client.query(`SELECT column_name FROM information_schema.columns WHERE table_name = 'courses'`);
+      const cols = structure.rows.map((r: any) => r.column_name);
+      if (cols.includes('is_active')) {
+        let sql = `UPDATE courses SET is_active = false`;
+        if (cols.includes('updated_at')) sql += `, updated_at = NOW()`;
+        sql += ` WHERE id = $1`;
+        await client.query(sql, [id]);
+      } else {
+        await client.query(`DELETE FROM courses WHERE id = $1`, [id]);
+      }
+      return res.status(200).json({ success: true });
+    } finally {
+      client.release();
+      await pool.end();
+    }
+  }
+
   if (req.method !== 'GET' || pathname !== '/api/courses') {
     return res.status(405).json({ error: 'Method not allowed' });
   }

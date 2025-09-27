@@ -27,6 +27,10 @@
       "dest": "/api/services.ts"
     },
     {
+      "src": "/api/services/(.*)",
+      "dest": "/api/services.ts"
+    },
+    {
       "src": "/api/reviews",
       "dest": "/api/reviews.ts"
     },
@@ -49,6 +53,10 @@
     },
     {
       "src": "/api/courses",
+      "dest": "/api/courses.ts"
+    },
+    {
+      "src": "/api/courses/(.*)",
       "dest": "/api/courses.ts"
     },
     {
