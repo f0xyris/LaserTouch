@@ -266,20 +266,10 @@ export class DatabaseStorage implements IStorage {
   }
 
   async deleteAppointment(id: number): Promise<void> {
-    const existingAppointment = await db.select().from(appointments).where(eq(appointments.id, id));
-    
-    if (existingAppointment.length === 0) {
-      return;
-    }
-    
     try {
-      await db.update(appointments)
-        .set({ isDeletedFromAdmin: true } as any)
-        .where(eq(appointments.id, id));
-      
-  
+      await db.delete(appointments).where(eq(appointments.id, id));
     } catch (error) {
-      console.error(`Error marking appointment ${id} as deleted from admin:`, error);
+      console.error(`Error deleting appointment ${id}:`, error);
       throw error;
     }
   }

@@ -403,7 +403,7 @@ export default function Account() {
                       {t.myAppointments || "No appointments yet"}
                     </p>
                     <Button 
-                      onClick={() => window.location.href = "/booking"}
+                      onClick={() => setLocation("/booking")}
                       className="bg-gradient-to-r from-mystical-500 to-mystical-600 hover:from-mystical-600 hover:to-mystical-700 text-white"
                     >
                       {t.bookNow || "Book Now"}

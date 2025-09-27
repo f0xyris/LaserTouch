@@ -83,6 +83,17 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const client = await pool.connect();
     
     try {
+      // Determine effective admin from DB to avoid stale token issues
+      let effectiveIsAdmin = !!payload.isAdmin;
+      try {
+        const adminRes = await client.query('SELECT is_admin FROM users WHERE id = $1', [payload.userId]);
+        if (adminRes.rows && adminRes.rows[0]) {
+          effectiveIsAdmin = effectiveIsAdmin || !!adminRes.rows[0].is_admin;
+        }
+      } catch (e) {
+        // If DB check fails, fall back to token claim
+      }
+
       if (req.method === 'GET') {
         // Check if this is a by-date request
         const { date } = req.query;
@@ -378,18 +389,28 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
                  } else if (req.method === 'PUT') {
              // CRITICAL FIX: Handle appointment updates from both URL parameters and request body
              // This fixes the issue where frontend sends PUT requests to /api/appointments?id=123
-             const { id, status, notes } = req.body;
+            const rawBody: any = typeof req.body === 'string' ? (() => { try { return JSON.parse(req.body); } catch { return {}; } })() : (req.body || {});
+            const { id, status: bodyStatus, notes } = rawBody as { id?: number | string; status?: string; notes?: string };
 
              // Check if this is a status update request (from URL parameter)
-             const urlId = req.query.id;
-             const appointmentId = urlId || id;
+            const urlId = req.query.id as string | string[] | undefined;
+            const appointmentIdRaw = (Array.isArray(urlId) ? urlId[0] : urlId) ?? (id as any);
+            const appointmentId = appointmentIdRaw !== undefined && appointmentIdRaw !== null ? Number(appointmentIdRaw) : undefined;
 
-             if (!appointmentId) {
-               return res.status(400).json({ error: 'Appointment ID is required' });
-             }
+            if (!appointmentId || Number.isNaN(appointmentId)) {
+              return res.status(400).json({ error: 'Appointment ID is required' });
+            }
+
+        // Validate status value
+        const statusFromQuery = (req.query.status as string | undefined);
+        const status = (bodyStatus ?? statusFromQuery) as string | undefined;
+        const allowedStatuses = new Set(['pending', 'confirmed', 'cancelled', 'completed']);
+        if (status !== undefined && !allowedStatuses.has(String(status))) {
+          return res.status(400).json({ error: 'Invalid status value' });
+        }
         
         let query = 'UPDATE appointments SET';
-        const queryParams = [];
+        const queryParams: any[] = [];
         let paramIndex = 1;
         let hasUpdates = false;
         
@@ -415,11 +436,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         queryParams.push(appointmentId);
         
         // If not admin, only allow updating own appointments
-        if (!payload.isAdmin) {
+        if (!effectiveIsAdmin) {
           query += ` AND user_id = $${paramIndex + 1}`;
           queryParams.push(payload.userId.toString());
         }
-        
+        // Return updated row
+        query += ' RETURNING id, status, notes, appointment_date as "appointmentDate"';
         const result = await client.query(query, queryParams);
 
         if (result.rowCount === 0) {
@@ -456,8 +478,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           console.error('Error sending appointment confirmation email:', emailErr);
         }
 
-        console.log('PUT appointment successful, updated rows:', result.rowCount);
-        res.status(200).json({ success: true });
+        console.log('PUT appointment successful, updated rows:', result.rowCount, 'updated:', result.rows?.[0]);
+        res.status(200).json({ success: true, updated: result.rows?.[0] });
       } else if (req.method === 'DELETE') {
         // Delete appointment
         const { id } = req.query;
@@ -470,7 +492,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         const queryParams = [id];
         
         // If not admin, only allow deleting own appointments
-        if (!payload.isAdmin) {
+        if (!effectiveIsAdmin) {
           query += ' AND user_id = $2';
           queryParams.push(payload.userId.toString());
         }

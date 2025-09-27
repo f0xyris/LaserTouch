@@ -1018,6 +1018,50 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Update appointment status (local dev Express)
+  app.put("/api/appointments", async (req: any, res) => {
+    try {
+      const idRaw = (req.query.id as string) ?? (req.body?.id as string);
+      const id = idRaw ? parseInt(idRaw) : NaN;
+      const { status, notes } = req.body || {};
+      if (!id || Number.isNaN(id)) {
+        return res.status(400).json({ error: "Appointment ID is required" });
+      }
+      // Validate status
+      if (status !== undefined) {
+        const allowed = new Set(["pending", "confirmed", "cancelled", "completed"]);
+        if (!allowed.has(String(status))) {
+          return res.status(400).json({ error: "Invalid status value" });
+        }
+      }
+      if (status !== undefined) {
+        await storage.updateAppointmentStatus(id, status);
+      }
+      // Optionally store notes if needed in future
+      const updated = await storage.getAppointmentById(id);
+      return res.status(200).json({ success: true, updated });
+    } catch (error) {
+      console.error("Error updating appointment:", error);
+      res.status(500).json({ error: "Failed to update appointment" });
+    }
+  });
+
+  // Delete appointment (local dev Express)
+  app.delete("/api/appointments", async (req: any, res) => {
+    try {
+      const idRaw = req.query.id as string;
+      const id = idRaw ? parseInt(idRaw) : NaN;
+      if (!id || Number.isNaN(id)) {
+        return res.status(400).json({ error: "Appointment ID is required" });
+      }
+      await storage.deleteAppointment(id);
+      return res.status(200).json({ success: true });
+    } catch (error) {
+      console.error("Error deleting appointment:", error);
+      res.status(500).json({ error: "Failed to delete appointment" });
+    }
+  });
+
   app.get("/api/appointments/by-date", async (req, res) => {
     try {
       const { date } = req.query;
