@@ -77,6 +77,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         if (columns.includes('description')) query += 'description, ';
         if (columns.includes('price')) query += 'price, ';
         if (columns.includes('duration')) query += 'duration, ';
+        if (columns.includes('category')) query += 'category, ';
         if (columns.includes('is_active')) query += 'is_active, ';
         if (columns.includes('created_at')) query += 'created_at, ';
         if (columns.includes('updated_at')) query += 'updated_at, ';
@@ -104,6 +105,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           description: service.description || { ua: '', en: '', pl: '' },
           price: service.price || 0,
           duration: service.duration || 60,
+          category: service.category || 'laser',
           isActive: service.is_active !== false,
           createdAt: service.created_at,
           updatedAt: service.updated_at
@@ -112,7 +114,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         res.status(200).json(services);
       } else if (req.method === 'POST') {
         // Create new service
-        const { name, description, price, duration } = req.body;
+        const { name, description, price, duration, category } = req.body;
         if (isDemo) {
           return res.status(201).json({
             id: Math.floor(Math.random() * 1000000) + 1000,
@@ -143,6 +145,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         let placeholders = ['$1', '$2', '$3', '$4'];
 
         // Optional columns
+        if (cols.includes('category')) {
+          insertCols.push('category');
+          insertParams.push(category || 'laser');
+          placeholders.push(`$${insertParams.length}`);
+        }
         if (cols.includes('is_active')) {
           insertCols.push('is_active');
           insertParams.push(true);
@@ -162,7 +169,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         res.status(201).json({ id: result.rows[0].id });
       } else if (req.method === 'PUT') {
         // Update service
-        const { id, name, description, price, duration } = req.body;
+        const { id, name, description, price, duration, category } = req.body;
         if (isDemo) {
           return res.status(200).json({ success: true, demo: true });
         }
@@ -179,6 +186,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           price || 0,
           duration || 60,
         ];
+        if (cols.includes('category') && category !== undefined) {
+          updateSql += `, category = $${params.length + 1}`;
+          params.push(category || 'laser');
+        }
         if (cols.includes('updated_at')) {
           updateSql += `, updated_at = NOW()`;
         }
