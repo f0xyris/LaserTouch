@@ -208,10 +208,17 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         if (cols.includes('updated_at')) {
           updateSql += `, updated_at = NOW()`;
         }
+        const url = new URL(req.url || '/', 'https://laser-touch.vercel.app');
+        const pathname = url.pathname;
+        const pathId = pathname.startsWith('/api/services/') ? Number(pathname.split('/').pop()) : undefined;
+        const targetId = pathId ?? Number(id);
         updateSql += ` WHERE id = $${params.length + 1}`;
-        params.push(id);
+        params.push(targetId);
 
-        await client.query(updateSql, params);
+        const upd = await client.query(updateSql, params);
+        if (upd.rowCount === 0) {
+          return res.status(404).json({ error: 'Service not found' });
+        }
         
         res.status(200).json({ success: true });
       } else if (req.method === 'DELETE') {
@@ -226,13 +233,23 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         `);
         const cols = structure.rows.map((r: any) => r.column_name);
 
+        const url = new URL(req.url || '/', 'https://laser-touch.vercel.app');
+        const pathname = url.pathname;
+        const pathId = pathname.startsWith('/api/services/') ? Number(pathname.split('/').pop()) : undefined;
+        const targetId = (id as string) ? Number(id) : pathId;
+        if (!targetId || Number.isNaN(targetId)) {
+          return res.status(400).json({ error: 'Service ID is required' });
+        }
+
         if (cols.includes('is_active')) {
           let sql = `UPDATE services SET is_active = false`;
           if (cols.includes('updated_at')) sql += `, updated_at = NOW()`;
           sql += ` WHERE id = $1`;
-          await client.query(sql, [id]);
+          const r = await client.query(sql, [targetId]);
+          if (r.rowCount === 0) return res.status(404).json({ error: 'Service not found' });
         } else {
-          await client.query(`DELETE FROM services WHERE id = $1`, [id]);
+          const r = await client.query(`DELETE FROM services WHERE id = $1`, [targetId]);
+          if (r.rowCount === 0) return res.status(404).json({ error: 'Service not found' });
         }
         
         res.status(200).json({ success: true });
