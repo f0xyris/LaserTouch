@@ -9,15 +9,15 @@
       }
     },
     {
-      "src": "/api/users/(\\d+)/admin",
-      "dest": "/api/users-admin.ts"
-    },
-    {
       "src": "api/**/*.ts",
       "use": "@vercel/node"
     }
   ],
   "routes": [
+    {
+      "src": "/api/users/(.*)/admin",
+      "dest": "/api/users-admin.ts"
+    },
     {
       "src": "/api/users",
       "dest": "/api/users.ts"
