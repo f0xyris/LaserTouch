@@ -190,7 +190,22 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       if (cols.includes('updated_at')) add('updated_at', 'NOW()', true);
       const sql = `INSERT INTO courses (${insertCols.join(', ')}) VALUES (${placeholders.join(', ')}) RETURNING id`;
       const result = await client.query(sql, params);
-      return res.status(201).json({ id: result.rows[0].id });
+      const newId = result.rows[0].id;
+      const created = await client.query('SELECT * FROM courses WHERE id = $1', [newId]);
+      const course = created.rows[0] || { id: newId };
+      const normalized = {
+        id: course.id,
+        name: course.name || course.title || { ua: '', en: '', pl: '' },
+        description: course.description || { ua: '', en: '', pl: '' },
+        price: course.price || 0,
+        duration: course.duration || 60,
+        imageUrl: course.image_url || course.image || null,
+        category: course.category || 'custom',
+        isActive: course.is_active !== false,
+        createdAt: course.created_at,
+        updatedAt: course.updated_at,
+      };
+      return res.status(201).json(normalized);
     } finally {
       client.release();
       await pool.end();

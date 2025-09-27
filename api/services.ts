@@ -166,7 +166,22 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
         const insertSql = `INSERT INTO services (${insertCols.join(', ')}) VALUES (${placeholders.join(', ')}) RETURNING id`;
         const result = await client.query(insertSql, insertParams);
-        res.status(201).json({ id: result.rows[0].id });
+        const newId = result.rows[0].id;
+        // Read back full row and normalize like GET
+        const createdRes = await client.query('SELECT * FROM services WHERE id = $1', [newId]);
+        const service = createdRes.rows[0] || { id: newId };
+        const normalized = {
+          id: service.id,
+          name: service.name || { ua: '', en: '', pl: '' },
+          description: service.description || { ua: '', en: '', pl: '' },
+          price: service.price || 0,
+          duration: service.duration || 60,
+          category: service.category || 'laser',
+          isActive: service.is_active !== false,
+          createdAt: service.created_at,
+          updatedAt: service.updated_at,
+        };
+        res.status(201).json(normalized);
       } else if (req.method === 'PUT') {
         // Update service
         const { id, name, description, price, duration, category } = req.body;
